@@ -95,19 +95,16 @@ export class LandChainContract extends Contract {
     }
 
     @Transaction()
-    public async transferParcel(ctx: Context, parcelId: string, newOwnerId: string, salePrice: number): Promise<void> {
+    public async transferParcel(ctx: Context, parcelId: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number): Promise<void> {
         const parcel = await this.getParcel(ctx, parcelId);
 
-        // 1. Check RoT
-        // In real world, we check msg.sender against parcel.title.owners
-
-        // 2. Check RoD (Must be empty or resolved)
+        // 1. Check RoD (Must be empty or resolved)
         const activeDisputes = parcel.disputes.filter(d => d.status === 'PENDING');
         if (activeDisputes.length > 0) {
             throw new Error(`Transfer Denied: Pending Disputes on Parcel`);
         }
 
-        // 3. Check RoCC (Must be clear)
+        // 2. Check RoCC (Must be clear)
         const activeCharges = parcel.charges.filter(c => c.active);
         for (const charge of activeCharges) {
             if (charge.type === 'MORTGAGE' || charge.type === 'TAX_DEFAULT') {
@@ -115,14 +112,81 @@ export class LandChainContract extends Contract {
             }
         }
 
-        // 4. Update RoT
-        parcel.title.owners = [{ ownerId: newOwnerId, sharePercentage: 100 }];
-        // Reset Conclusivity clock? (Model Act says 3 years from notification, strict interpretation might mean 3 years from ANY title change)
+        // 3. Verify Seller Ownership & Share
+        // In real world, we verify msg.sender == sellerId
+        const sellerIndex = parcel.title.owners.findIndex(o => o.ownerId === sellerId);
+        if (sellerIndex === -1) {
+            throw new Error(`Seller ${sellerId} is not an owner of this parcel`);
+        }
+
+        const sellerRecord = parcel.title.owners[sellerIndex];
+        if (sellerRecord.sharePercentage < sharePercentage) {
+            throw new Error(`Seller only owns ${sellerRecord.sharePercentage}%, cannot sell ${sharePercentage}%`);
+        }
+
+        // 4. Joint Holding Check (Mock Multi-Sig)
+        // If selling 100% of the property (sharePercentage == 100), but there are multiple owners, 
+        // we require signatures from ALL owners. 
+        // Since we are mocking signatures, we simply BLOCK this action if the seller is not the sole owner.
+        // The seller must first acquire 100% share or the buyers must buy shares individually from each owner.
+
+        if (sharePercentage === 100 && parcel.title.owners.length > 1) {
+            throw new Error(`Multi-Sig Required: Cannot sell 100% of a Jointly Held property. Sell your share (${sellerRecord.sharePercentage}%) instead.`);
+        }
+
+        // 5. Execute Transfer (Update Shares)
+
+        // Deduct from Seller
+        sellerRecord.sharePercentage -= sharePercentage;
+        if (sellerRecord.sharePercentage === 0) {
+            parcel.title.owners.splice(sellerIndex, 1); // Remove seller if 0% left
+        }
+
+        // Add to Buyer
+        const buyerIndex = parcel.title.owners.findIndex(o => o.ownerId === buyerId);
+        if (buyerIndex !== -1) {
+            parcel.title.owners[buyerIndex].sharePercentage += sharePercentage;
+        } else {
+            parcel.title.owners.push({ ownerId: buyerId, sharePercentage: sharePercentage });
+        }
+
+        // 6. Reset Conclusivity (Title flow changed)
         parcel.title.publicationDate = Date.now();
         parcel.title.isConclusive = false;
 
-        // 5. Update Status
-        // parcel.status remains FREE if checks pass
+        // 7. Update Metadata
+        // parcel.lastTransferredAt = Date.now(); // If we re-add this field
+
+        await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+    }
+
+    @Transaction()
+    public async resolveDispute(ctx: Context, parcelId: string, disputeId: string, resolution: string): Promise<void> {
+        const parcel = await this.getParcel(ctx, parcelId);
+
+        const dispute = parcel.disputes.find(d => d.disputeId === disputeId);
+        if (!dispute) {
+            throw new Error(`Dispute ${disputeId} not found`);
+        }
+
+        if (dispute.status !== 'PENDING') {
+            throw new Error(`Dispute ${disputeId} is already ${dispute.status}`);
+        }
+
+        // 1. Resolve it
+        dispute.status = 'RESOLVED';
+        // In real app, store 'resolution' text or doc hash
+
+        // 2. Check if we can unlock the parcel
+        const remainingDisputes = parcel.disputes.filter(d => d.status === 'PENDING');
+        const activeBlockingCharges = parcel.charges.filter(c => c.active && (c.type === 'MORTGAGE' || c.type === 'TAX_DEFAULT'));
+
+        if (remainingDisputes.length === 0 && activeBlockingCharges.length === 0) {
+            parcel.status = 'FREE';
+        } else if (activeBlockingCharges.length > 0) {
+            parcel.status = 'LOCKED'; // Still locked by charge
+        }
+        // If other disputes remain, status stays LITIGATION (implicit)
 
         await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
     }

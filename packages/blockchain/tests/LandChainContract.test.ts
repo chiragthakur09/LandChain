@@ -102,7 +102,7 @@ describe('LandChainContract', () => {
 
             mockStub.getState.resolves(Buffer.from(JSON.stringify(existingParcel)));
 
-            await contract.transferParcel(ctx, 'PARCEL_TEST_001', 'NEW_OWNER', 1000);
+            await contract.transferParcel(ctx, 'PARCEL_TEST_001', 'OLD_OWNER', 'NEW_OWNER', 100, 1000);
 
             const putStateArgs = mockStub.putState.getCall(0).args;
             const updatedParcel = JSON.parse(putStateArgs[1].toString());
@@ -121,7 +121,7 @@ describe('LandChainContract', () => {
             mockStub.getState.resolves(Buffer.from(JSON.stringify(existingParcel)));
 
             try {
-                await contract.transferParcel(ctx, 'PARCEL_TEST_001', 'NEW_OWNER', 1000);
+                await contract.transferParcel(ctx, 'PARCEL_TEST_001', 'OLD_OWNER', 'NEW_OWNER', 100, 1000);
                 expect.fail('Should have failed due to Mortgage');
             } catch (err: any) {
                 expect(err.message).to.include('Transfer Denied');
