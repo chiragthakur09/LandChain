@@ -47,15 +47,35 @@ export class FabricService implements OnModuleInit {
     }
 
     async submit(functionName: string, ...args: string[]): Promise<any> {
+        // Simulate Endorsement Policy Routing
+        const targetOrg = this.getTargetOrg(functionName);
+        console.log(`[FabricService] Routing '${functionName}' to ${targetOrg} Peer for Endorsement...`);
+
         if (!this.isConnected) {
             console.warn('Network not connected. Simulating submission.');
-            return { success: true, txId: 'MOCK_TX_' + Date.now() };
+            return { success: true, txId: 'MOCK_TX_' + Date.now(), endorsedBy: targetOrg };
         }
 
         const network = await this.gateway.getNetwork('mychannel');
         const contract = network.getContract('landchain');
+
+        // In real Fabric, we would use discovery or specific peers here
         await contract.submitTransaction(functionName, ...args);
-        return { success: true };
+        return { success: true, endorsedBy: targetOrg };
+    }
+
+    private getTargetOrg(functionName: string): string {
+        switch (functionName) {
+            case 'createParcel':
+            case 'finalizeTitle':
+                return 'RevenueOrg (Govt)';
+            case 'resolveDispute':
+                return 'CourtOrg (Judiciary)';
+            case 'recordIntimation': // If Charge
+                return 'BankOrg (Financial)';
+            default:
+                return 'Any Peer (Revenue/Bank/Court)';
+        }
     }
 
     private getMockData(functionName: string, args: string[]) {

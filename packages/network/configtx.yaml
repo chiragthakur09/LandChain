@@ -1,0 +1,160 @@
+Organizations:
+    - &OrdererOrg
+        Name: OrdererOrg
+        ID: OrdererMSP
+        MSPDir: crypto-config/ordererOrganizations/example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Writers:
+                Type: Signature
+                Rule: "OR('OrdererMSP.member')"
+            Admins:
+                Type: Signature
+                Rule: "OR('OrdererMSP.admin')"
+
+    - &RevenueOrg
+        Name: RevenueOrgMP
+        ID: RevenueOrgMSP
+        MSPDir: crypto-config/peerOrganizations/revenue.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('RevenueOrgMSP.admin', 'RevenueOrgMSP.peer', 'RevenueOrgMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('RevenueOrgMSP.admin', 'RevenueOrgMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('RevenueOrgMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('RevenueOrgMSP.peer')"
+
+    - &BankOrg
+        Name: BankOrgMSP
+        ID: BankOrgMSP
+        MSPDir: crypto-config/peerOrganizations/bank.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('BankOrgMSP.admin', 'BankOrgMSP.peer', 'BankOrgMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('BankOrgMSP.admin', 'BankOrgMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('BankOrgMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('BankOrgMSP.peer')"
+
+    - &CourtOrg
+        Name: CourtOrgMSP
+        ID: CourtOrgMSP
+        MSPDir: crypto-config/peerOrganizations/court.example.com/msp
+        Policies:
+            Readers:
+                Type: Signature
+                Rule: "OR('CourtOrgMSP.admin', 'CourtOrgMSP.peer', 'CourtOrgMSP.client')"
+            Writers:
+                Type: Signature
+                Rule: "OR('CourtOrgMSP.admin', 'CourtOrgMSP.client')"
+            Admins:
+                Type: Signature
+                Rule: "OR('CourtOrgMSP.admin')"
+            Endorsement:
+                Type: Signature
+                Rule: "OR('CourtOrgMSP.peer')"
+
+Capabilities:
+    Channel: &ChannelCapabilities
+        V2_0: true
+    Orderer: &OrdererCapabilities
+        V2_0: true
+    Application: &ApplicationCapabilities
+        V2_0: true
+
+Application: &ApplicationDefaults
+    Organizations:
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        LifecycleEndorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+        Endorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+    Capabilities:
+        <<: *ApplicationCapabilities
+
+Orderer: &OrdererDefaults
+    OrdererType: etcdraft
+    Addresses:
+        - orderer.example.com:7050
+    EtcdRaft:
+        Consenters:
+        - Host: orderer.example.com
+          Port: 7050
+          ClientTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+          ServerTLSCert: crypto-config/ordererOrganizations/example.com/orderers/orderer.example.com/tls/server.crt
+    BatchTimeout: 2s
+    BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+    Organizations:
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+        BlockValidation:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+
+Channel: &ChannelDefaults
+    Policies:
+        Readers:
+            Type: ImplicitMeta
+            Rule: "ANY Readers"
+        Writers:
+            Type: ImplicitMeta
+            Rule: "ANY Writers"
+        Admins:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Admins"
+    Capabilities:
+        <<: *ChannelCapabilities
+
+Profiles:
+    ThreeOrgOrdererGenesis:
+        <<: *ChannelDefaults
+        Orderer:
+            <<: *OrdererDefaults
+            Organizations:
+                - *OrdererOrg
+            Capabilities:
+                <<: *OrdererCapabilities
+        Application:
+            <<: *ApplicationDefaults
+            Organizations:
+                - *RevenueOrg
+                - *BankOrg
+                - *CourtOrg
+            Capabilities:
+                <<: *ApplicationCapabilities
