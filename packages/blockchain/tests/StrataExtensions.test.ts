@@ -1,0 +1,97 @@
+
+import * as sin from 'sinon';
+import * as chai from 'chai';
+import { Context } from 'fabric-contract-api';
+import { ChaincodeStub } from 'fabric-shim';
+import { LandChainContract } from '../src/contracts/LandChainContract';
+import { LandParcel } from '../src/assets/LandParcel';
+import { StrataUnit } from '../src/assets/StrataUnit';
+import { TitleRecord } from '../src/assets/TitleRecord';
+
+const sinonChai = require('sinon-chai');
+chai.use(sinonChai.default || sinonChai);
+const expect = chai.expect;
+const sinon = require('sinon');
+
+describe('Strata Extensions (Checklist)', () => {
+    let contract: LandChainContract;
+    let ctx: Context;
+    let mockStub: any;
+
+    beforeEach(() => {
+        contract = new LandChainContract();
+        ctx = new Context();
+        mockStub = sinon.createStubInstance(ChaincodeStub);
+        ctx.stub = mockStub;
+    });
+
+    const createMockParent = (id: string, status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED'): LandParcel => {
+        return {
+            parcelId: id,
+            status: status,
+            title: { owners: [{ ownerId: 'BUILDER', sharePercentage: 100 }] } as any,
+            // ... minimal other fields
+        } as LandParcel;
+    };
+
+    const createMockUnit = (id: string, parentId: string): StrataUnit => {
+        return {
+            unitId: id,
+            parentParcelId: parentId,
+            status: 'FREE',
+            title: { owners: [{ ownerId: 'OWNER_1', sharePercentage: 100 }] } as any,
+            ocDocumentHash: 'QmValidOC', // Ensure RERA Check passes
+            reraRegistrationNumber: 'P123456789012'
+        } as StrataUnit;
+    };
+
+    it('should BLOCK sale of Unit if Parent Land is LOCKED (Mortgage)', async () => {
+        const parent = createMockParent('PARENT_1', 'LOCKED');
+        const unit = createMockUnit('UNIT_101', 'PARENT_1');
+
+        mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
+        mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
+
+        const txData = { parcelId: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+
+        try {
+            await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
+            expect.fail('Should have thrown error');
+        } catch (err: any) {
+            expect(err.message).to.include('Parent Land (PARENT_1) is NOT Free');
+            expect(err.message).to.include('LOCKED');
+        }
+    });
+
+    it('should BLOCK sale of Unit if Parent Land is RETIRED', async () => {
+        const parent = createMockParent('PARENT_1', 'RETIRED');
+        const unit = createMockUnit('UNIT_101', 'PARENT_1');
+
+        mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
+        mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
+
+        const txData = { parcelId: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+
+        try {
+            await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
+            expect.fail('Should have thrown error');
+        } catch (err: any) {
+            expect(err.message).to.include('Parent Land (PARENT_1) is NOT Free');
+            expect(err.message).to.include('RETIRED');
+        }
+    });
+
+    it('should ALLOW sale if Parent is FREE', async () => {
+        const parent = createMockParent('PARENT_1', 'FREE');
+        const unit = createMockUnit('UNIT_101', 'PARENT_1');
+
+        mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
+        mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
+
+        const txData = { parcelId: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+
+        await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
+
+        // Should succeed (no error)
+    });
+});

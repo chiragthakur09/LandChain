@@ -1,8 +1,9 @@
+
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
-export class HttpExceptionFilter implements ExceptionFilter {
+export class AllExceptionsFilter implements ExceptionFilter {
     catch(exception: unknown, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
@@ -10,25 +11,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
         let status = HttpStatus.INTERNAL_SERVER_ERROR;
         let message = 'Internal server error';
+        let errorCode = 'INTERNAL_ERROR';
 
         if (exception instanceof HttpException) {
             status = exception.getStatus();
             const responseBody: any = exception.getResponse();
-            message = typeof responseBody === 'object' && responseBody.message
-                ? responseBody.message
-                : responseBody;
+            message = responseBody.message || exception.message;
+            errorCode = responseBody.error || 'HTTP_ERROR';
         } else if (exception instanceof Error) {
-            // Handle Fabric Errors (which often come as generic Errors with messages)
-            message = exception.message;
-            if (message.includes('Asset') && message.includes('not found')) {
+            // Fabric Errors often come as generic Errors but with specific strings
+            if (exception.message.includes('Usage Error') || exception.message.includes('Usage error')) {
+                status = HttpStatus.BAD_REQUEST;
+                errorCode = 'CHAINCODE_USAGE_ERROR';
+            } else if (exception.message.includes('Asset not found')) {
                 status = HttpStatus.NOT_FOUND;
-            } else if (message.includes('already exists')) {
-                status = HttpStatus.CONFLICT;
-            } else if (message.includes('Transfer Denied') || message.includes('Asset is LOCKED')) {
-                status = HttpStatus.FORBIDDEN;
-            } else {
-                status = HttpStatus.BAD_REQUEST; // Default to 400 for logic errors
+                errorCode = 'ASSET_NOT_FOUND';
             }
+            message = exception.message;
         }
 
         response
@@ -37,6 +36,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 statusCode: status,
                 timestamp: new Date().toISOString(),
                 path: request.url,
+                errorCode: errorCode,
                 message: message,
             });
     }

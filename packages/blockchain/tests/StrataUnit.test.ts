@@ -4,6 +4,7 @@ import { LandChainContract } from '../src/contracts/LandChainContract';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { LandParcel } from '../src/assets/LandParcel';
+import { StrataUnit } from '../src/assets/StrataUnit';
 
 describe('LandChainContract: Strata Titling', () => {
     let contract: LandChainContract;
@@ -56,19 +57,22 @@ describe('LandChainContract: Strata Titling', () => {
     describe('executeTransaction on StrataUnit', () => {
         it('should execute SALE on a StrataUnit', async () => {
             // Mock Strata Unit
-            const unit: any = {
-                unitId: 'APT_101',
-                parentParcelId: 'PARCEL_100',
-                status: 'FREE',
-                title: { owners: [{ ownerId: 'BUILDER', sharePercentage: 100 }], isConclusive: true }
-            };
-            mockStub.getState.withArgs('APT_101').resolves(Buffer.from(JSON.stringify(unit)));
+            const unit = new StrataUnit();
+            unit.unitId = 'UNIT_505';
+            unit.parentParcelId = 'PARCEL_A';
+            unit.status = 'FREE';
+            unit.title = { owners: [{ ownerId: 'BUILDER', sharePercentage: 100 }] } as any;
+            unit.ocDocumentHash = 'QmValidOCHash12345678901234567890123456789012'; // Added for Phase 29 RERA
 
-            const txData = { parcelId: 'APT_101', buyerId: 'BUYER_1', price: 5000000 };
-            await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), 'HASH');
+            // Mock Parent as FREE
+            mockStub.getState.withArgs('PARCEL_A').resolves(Buffer.from(JSON.stringify({ status: 'FREE' })));
+            mockStub.getState.withArgs('UNIT_505').resolves(Buffer.from(JSON.stringify(unit)));
 
-            const putCall = mockStub.putState.firstCall;
-            const updatedUnit = JSON.parse(putCall.args[1].toString());
+            await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ parcelId: 'UNIT_505', buyerId: 'BUYER_1' }), '');
+
+            // Verify Owner Update
+            const putArgs = mockStub.putState.args[0];
+            const updatedUnit = JSON.parse(putArgs[1].toString());
             expect(updatedUnit.title.owners[0].ownerId).to.equal('BUYER_1');
         });
 

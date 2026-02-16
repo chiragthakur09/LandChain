@@ -1,18 +1,23 @@
 import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { IdentityService } from './identity.service';
+import { VerifyAadhaarDto, SendOtpDto, VerifyOtpDto } from './identity.dto';
 
+@ApiTags('Identity (Aadhaar)')
 @Controller('identity')
 export class IdentityController {
     constructor(private readonly identityService: IdentityService) { }
 
+    @ApiOperation({ summary: 'Verify Aadhaar Existence' })
     @Post('verify-aadhaar')
-    verifyAadhaar(@Body() dto: { aadhaarNo: string }) {
+    verifyAadhaar(@Body() dto: VerifyAadhaarDto) {
         const isValid = this.identityService.verifyAadhaar(dto.aadhaarNo);
         return { valid: isValid };
     }
 
+    @ApiOperation({ summary: 'Send OTP for Authentication' })
     @Post('send-otp')
-    sendOtp(@Body() dto: { aadhaarNo: string }) {
+    sendOtp(@Body() dto: SendOtpDto) {
         try {
             const sessionId = this.identityService.sendOtp(dto.aadhaarNo);
             return { message: 'OTP Sent', sessionId };
@@ -21,8 +26,10 @@ export class IdentityController {
         }
     }
 
+    @ApiOperation({ summary: 'Verify OTP and Get Token' })
+    @ApiResponse({ status: 201, description: 'Token Generated' })
     @Post('verify-otp')
-    verifyOtp(@Body() dto: { sessionId: string, otp: string }) {
+    verifyOtp(@Body() dto: VerifyOtpDto) {
         const isValid = this.identityService.verifyOtp(dto.sessionId, dto.otp);
         if (!isValid) {
             throw new BadRequestException('Invalid OTP');

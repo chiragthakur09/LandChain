@@ -5,7 +5,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { LandParcel } from '../src/assets/LandParcel';
 
-describe('Phase 12: Real World Nuances', () => {
+describe('Real World Nuances (Partial Transfers & Disputes)', () => {
     let contract: LandChainContract;
     let ctx: Context;
     let mockStub: sinon.SinonStubbedInstance<ChaincodeStub>;

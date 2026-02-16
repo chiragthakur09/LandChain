@@ -5,7 +5,7 @@ import { LandParcel } from '../src/assets/LandParcel';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 
-describe('Phase 16: Dynamic State Machine (Schema 2.0)', () => {
+describe('Dynamic State Machine (Schema 2.0)', () => {
     let contract: LandChainContract;
     let ctx: Context;
     let mockStub: sinon.SinonStubbedInstance<ChaincodeStub>;

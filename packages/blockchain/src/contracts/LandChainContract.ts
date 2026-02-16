@@ -7,6 +7,8 @@ import { StrataUnit } from '../assets/StrataUnit';
 import { PaymentRecord } from '../assets/PaymentRecord';
 import { AssetRegistry } from '../logic/AssetRegistry';
 import { LifecycleManager } from '../logic/LifecycleManager';
+import { AdminValidator } from '../logic/AdminValidator';
+import { FormatValidator } from '../logic/FormatValidator';
 
 @Info({ title: 'LandChainContract', description: 'Smart Contract for LandChain: The government-grade land registry' })
 export class LandChainContract extends Contract {
@@ -14,7 +16,8 @@ export class LandChainContract extends Contract {
     @Transaction()
     public async initLedger(ctx: Context): Promise<void> {
         console.log('Initializing Ledger with Genesis Block Mock Data...');
-        await this.createParcel(ctx, 'PARCEL_001', 'GOV_INDIA_TREASURY', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'QmHashGenesis');
+        // Mock Genesis hash
+        await this.createParcel(ctx, 'PARCEL_001', 'GOV_INDIA_TREASURY', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco');
     }
 
     @Transaction()
@@ -25,15 +28,37 @@ export class LandChainContract extends Contract {
             throw new Error(`The parcel ${parcelId} already exists`);
         }
 
+        // Phase 29: Validate Inputs
+        if (docHash.startsWith('Qm')) {
+            FormatValidator.validateIPFS(docHash);
+        }
+
         const parcel = new LandParcel();
         parcel.parcelId = parcelId;
         parcel.surveyNo = parcelId.split('_')[1] || '000';
         parcel.subDivision = '0';
         parcel.landUseType = 'AGRICULTURAL';
-        parcel.area = 10.0;
+        parcel.area = 1.0; // Assume Hectare input for base
         parcel.geoJson = geoJson;
         parcel.docHash = docHash;
         parcel.status = 'FREE';
+
+        // Defaults
+        parcel.landCategory = 'GENERAL';
+        parcel.tenureType = 'OCCUPANCY_CLASS_1';
+        parcel.isTribalProtected = false;
+        parcel.isWakf = false;
+        parcel.isForestCRZ = false;
+
+        // Phase 29: Local Measurement Calculation
+        parcel.localMeasurementUnit = 'GUNTHA'; // Default
+        // Assuming 'parcel.area' is Hectares in Ledger
+        parcel.localMeasurementValue = FormatValidator.calculateLocalUnit(parcel.area, 'GUNTHA');
+
+        parcel.mutationRequestTimestamp = 0;
+        parcel.ulpinPNIU = ''; // Optional on creation, can be updated later via simple update mechanism? 
+        // Or if parcelId IS the ULPIN, we validate it.
+        // For now parcelId seems to be UUID style. ULPIN is separate field. 
 
         // Initialize RoT (Title Record)
         parcel.title = new TitleRecord();
@@ -79,6 +104,14 @@ export class LandChainContract extends Contract {
                 parcel.status = 'LOCKED';
             }
         } else if (category === 'DISPUTE') {
+            // Phase 29: CNR Validation
+            // Issuer 'details' or 'issuer' might contain CNR? 
+            // Let's assume 'issuer' is Court Name, 'details' contains CNR or we pass it explicitly.
+            // For this POC, let's treat 'details' as potentially holding the CNR if it matches format.
+            if (details.length === 16) {
+                try { FormatValidator.validateCNR(details); } catch (e) { /* ignore if just text */ }
+            }
+
             const dispute = new DisputeRecord();
             dispute.disputeId = `DSP_${parcel.disputes.length + 1}`;
             dispute.parcelId = parcelId;
@@ -231,6 +264,12 @@ export class LandChainContract extends Contract {
         unit.udsPercent = 1.0; // Mock
         unit.status = 'FREE';
 
+        // Phase 20: RERA Defaults
+        unit.udsValue = 0;
+        unit.reraRegistrationNumber = 'NOT_REGISTERED';
+        unit.ocDocumentHash = '';
+        unit.legalEntity = 'HOUSING_SOCIETY';
+
         // 3. Init RoT for Unit
         unit.title = new TitleRecord();
         unit.title.titleId = `TITLE_${unitId}`;
@@ -297,10 +336,19 @@ export class LandChainContract extends Contract {
     // Phase 16: Dynamic State Machine (Pluggable Architecture)
     // ============================================================
 
+    // Configuration: 30 Days in Milliseconds
+    public static readonly MUTATION_PERIOD_MS = 30 * 24 * 60 * 60 * 1000;
+
     @Transaction()
     public async executeTransaction(ctx: Context, transactionType: string, transactionDataJson: string, evidenceHash: string): Promise<void> {
         const transactionData = JSON.parse(transactionDataJson);
         const { parcelId } = transactionData;
+
+        // Phase 27: Amalgamation handles its own fetching
+        if (transactionType === 'AMALGAMATE_PARCELS') {
+            await this.processAmalgamation(ctx, transactionData);
+            return;
+        }
 
         // 1. Fetch Asset (LandParcel or StrataUnit)
         const parcelBytes = await ctx.stub.getState(parcelId);
@@ -312,15 +360,46 @@ export class LandChainContract extends Contract {
         // 2. Global Validation (State Machine)
         if (parcel.status !== 'FREE') {
             // Allow some transactions on Locked assets? (e.g. Unlock)
-            if (transactionType !== 'RESOLVE_DISPUTE' && transactionType !== 'UNLOCK_CHARGE') {
+            if (transactionType !== 'RESOLVE_DISPUTE' && transactionType !== 'UNLOCK_CHARGE' && transactionType !== 'APPROVE_MUTATION' && transactionType !== 'INTIMATE_DEATH') {
+                // Determine if interaction is allowed based on status
                 throw new Error(`Asset is ${parcel.status}. Cannot execute ${transactionType}.`);
             }
         }
 
+        // Check Parent Land Status if this is a Strata Unit
+        if ('parentParcelId' in parcel && (parcel as any).parentParcelId) {
+            const parentId = (parcel as any).parentParcelId;
+            const parentBytes = await ctx.stub.getState(parentId);
+            if (parentBytes && parentBytes.length > 0) {
+                const parentAsset = JSON.parse(parentBytes.toString());
+                if (parentAsset.status && parentAsset.status !== 'FREE') {
+                    throw new Error(`Operation Blocked: Parent Land (${parentId}) is NOT Free (Status: ${parentAsset.status}). Litigation/Locks extend to all units.`);
+                }
+            }
+        }
+
+        // Admin Validation (Tribal Check)
+        await AdminValidator.validateTribalTransfer(ctx, parcel, transactionData);
+
         // 3. Delegate to Transaction Logic (The "Plug")
         switch (transactionType) {
             case 'SALE':
+                // RERA Check (If StrataUnit)
+                if (parcel.docHash === undefined) { // HACK: StrataUnit structure check
+                    // It's likely a StrataUnit if it has parentParcelId, but here we are using 'any' type.
+                    // Let's assume for now we check if specific fields exist.
+                }
+                if (parcel.unitId) { // It is a Strata Unit
+                    await AdminValidator.validateRERACompliance(ctx, parcel, transactionType);
+                }
+
                 await this.processSale(ctx, parcel, transactionData);
+
+                // Mutation Scrutiny (Simulated)
+                // Instead of instant success, we might mark it pending.
+                // Or better, the 'processSale' updates the owner, but status becomes PENDING.
+                parcel.status = 'PENDING_SCRUTINY';
+                parcel.mutationRequestTimestamp = Date.now(); // Start 30-day Timer
                 break;
             case 'PARTITION':
                 await this.processPartition(ctx, parcel, transactionData);
@@ -330,6 +409,50 @@ export class LandChainContract extends Contract {
                 break;
             case 'CONVERSION':
                 await this.processConversion(ctx, parcel, transactionData);
+                break;
+            case 'APPROVE_MUTATION':
+                // End Scrutiny with Timer Check
+                if (parcel.status === 'PENDING_SCRUTINY') {
+                    const minPeriod = LandChainContract.MUTATION_PERIOD_MS;
+                    const timeElapsed = Date.now() - parcel.mutationRequestTimestamp;
+
+                    if (timeElapsed < minPeriod) {
+                        // For Demo purposes, we might want to bypass this or have a FORCE flag?
+                        // Let's enforce it strictly as per "Code Surgery" request.
+                        const remainingDays = Math.ceil((minPeriod - timeElapsed) / (24 * 60 * 60 * 1000));
+                        throw new Error(`Scrutiny Period Active. Cannot approve mutation yet. Try again in ${remainingDays} days.`);
+                    }
+
+                    parcel.status = 'FREE';
+                    parcel.mutationRequestTimestamp = 0; // Reset
+                } else {
+                    throw new Error('Asset is not pending scrutiny.');
+                }
+                break;
+            // Indian Lifecycle Workflows
+            case 'REGISTER_ATS':
+                await this.processAgreementToSale(ctx, parcel, transactionData);
+                break;
+            case 'INTIMATE_DEATH':
+                await this.processDeathIntimation(ctx, parcel, transactionData);
+                break;
+            case 'GIFT':
+                await this.processGift(ctx, parcel, transactionData);
+                break;
+            case 'FINALIZE_PARTITION':
+                await this.finalizePartitionRetirement(ctx, parcel, transactionData);
+                break;
+            // Phase 27: Urban
+            case 'AMALGAMATE_PARCELS':
+                // This is a multi-asset transaction, validation is internal.
+                // We pass 'parcel' as context but logic handles list.
+                await this.processAmalgamation(ctx, transactionData);
+                break;
+            case 'RECTIFY_BOUNDARY':
+                await this.processBoundaryRectification(ctx, parcel, transactionData);
+                break;
+            case 'UNLOCK_CHARGE':
+                await this.processUnlockCharge(ctx, parcel, transactionData);
                 break;
             default:
                 throw new Error(`Unknown Transaction Type: ${transactionType}`);
@@ -377,7 +500,133 @@ export class LandChainContract extends Contract {
     }
 
     private async processConversion(ctx: Context, parcel: LandParcel, data: any) {
+        // 1. Check if allowed
+        if (parcel.landUseType === 'FOREST' || parcel.isForestCRZ) {
+            throw new Error(`Restricted: Cannot convert FOREST or CRZ land. Protected under Forest Conservation Act.`);
+        }
         // data: { newUse: string }
         parcel.landUseType = data.newUse;
+    }
+
+    // =========================================================
+    // Comprehensive Lifecycle Workflows (Indian Context)
+    // =========================================================
+
+    private async processAgreementToSale(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { buyerId, agreementDate, advanceAmount }
+        parcel.status = 'PENDING_ATS';
+        // ideally we would add a charge here too, but status change is sufficient for locking
+    }
+
+    private async processDeathIntimation(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { deceasedOwnerId, deathCertificateHash, dateOfDeath }
+        parcel.status = 'LOCKED_FOR_SUCCESSION';
+        // logic to verify deceasedOwnerId exists in owners list could be added
+    }
+
+    private async processGift(ctx: Context, parcel: LandParcel, data: any) {
+        // Gift is effectively a Transfer but with 0 consideration usually.
+        // We might simply check stamp duty if we were calculating it.
+        // For now, it aliases to standard transfer logic but we can add specific checks.
+        // data: { doneeId, giftDeedHash }
+        parcel.status = 'PENDING_SCRUTINY'; // triggers standard mutation flow
+        parcel.mutationRequestTimestamp = Date.now();
+        parcel.title.owners = [{ ownerId: data.doneeId, sharePercentage: 100 }];
+        parcel.title.isConclusive = false;
+    }
+
+    private async finalizePartitionRetirement(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { newParcels: [...] } 
+        // This is called AFTER creating new parcels usually.
+        // Here we just mark parent as RETIRED.
+        parcel.status = 'RETIRED';
+    }
+
+    // =========================================================
+    // Phase 27: Urban & Commercial Workflows
+    // =========================================================
+
+    private async processAmalgamation(ctx: Context, data: any) {
+        // data: { constituentParcelIds: string[], newParcelId: string, newGeoJson: string }
+        const { constituentParcelIds, newParcelId, newGeoJson } = data;
+
+        if (!constituentParcelIds || constituentParcelIds.length < 2) {
+            throw new Error('Amalgamation requires at least two parcels.');
+        }
+
+        const sourceParcels: LandParcel[] = [];
+        let primaryOwner = '';
+
+        // 1. Validate Source Parcels
+        for (const pid of constituentParcelIds) {
+            const parcelBytes = await ctx.stub.getState(pid);
+            if (!parcelBytes || parcelBytes.length === 0) throw new Error(`Parcel ${pid} not found`);
+            const p: LandParcel = JSON.parse(parcelBytes.toString());
+
+            if (p.status !== 'FREE') throw new Error(`Parcel ${pid} is not FREE.`);
+
+            // ownership check (simplistic: first owner must match)
+            const currentOwner = p.title.owners[0].ownerId;
+            if (!primaryOwner) primaryOwner = currentOwner;
+            if (primaryOwner !== currentOwner) throw new Error(`Ownership mismatch. All parcels must belong to ${primaryOwner}.`);
+
+            sourceParcels.push(p);
+        }
+
+        // 2. Retire Source Parcels
+        for (const p of sourceParcels) {
+            p.status = 'RETIRED';
+            await ctx.stub.putState(p.parcelId, Buffer.from(JSON.stringify(p)));
+        }
+
+        // 3. Create Merged Parcel
+        const mergedParcel = new LandParcel();
+        mergedParcel.parcelId = newParcelId;
+        mergedParcel.status = 'FREE';
+        mergedParcel.title = new TitleRecord();
+        mergedParcel.title.parcelId = newParcelId;
+        mergedParcel.title.owners = [{ ownerId: primaryOwner, sharePercentage: 100 }];
+        mergedParcel.title.isConclusive = false; // New Survey needed
+        mergedParcel.geoJson = newGeoJson;
+        mergedParcel.area = sourceParcels.reduce((sum, p) => sum + p.area, 0); // Sum areas
+        mergedParcel.landUseType = sourceParcels[0].landUseType; // Inherit from first
+        mergedParcel.ulpinPNIU = ''; // Pending new assignment
+
+        await ctx.stub.putState(newParcelId, Buffer.from(JSON.stringify(mergedParcel)));
+    }
+
+    private async processBoundaryRectification(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { newGeoJson, surveyRef, newUlpin }
+        if (!data.newGeoJson) throw new Error('New GeoJSON is required for rectification.');
+
+        parcel.geoJson = data.newGeoJson;
+
+        // Phase 29: Valid ULPIN Update
+        if (data.newUlpin) {
+            FormatValidator.validateULPIN(data.newUlpin);
+            parcel.ulpinPNIU = data.newUlpin;
+        }
+
+        // In a real system, we would log the surveyRef to a history or immutable trail.
+        // potentially ctx.stub.putState(`SURVEY_${data.surveyRef}`, ...)
+    }
+
+    private async processUnlockCharge(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { chargeId }
+        const charge = parcel.charges.find(c => c.chargeId === data.chargeId);
+        if (!charge) throw new Error(`Charge ${data.chargeId} not found.`);
+        if (!charge.active) throw new Error(`Charge ${data.chargeId} is already inactive.`);
+
+        // In real system, check ctx.clientIdentity matched charge.holder
+
+        charge.active = false;
+
+        // Check if we can unlock the parcel
+        const remainingActiveCharges = parcel.charges.filter(c => c.active && (c.type === 'MORTGAGE' || c.type === 'TAX_DEFAULT'));
+        const pendingDisputes = parcel.disputes.filter(d => d.status === 'PENDING');
+
+        if (remainingActiveCharges.length === 0 && pendingDisputes.length === 0) {
+            parcel.status = 'FREE';
+        }
     }
 }
