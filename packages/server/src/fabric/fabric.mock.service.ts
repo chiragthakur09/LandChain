@@ -147,6 +147,24 @@ export class FabricMockService implements OnModuleInit {
             // Throw error for unknown parcels to match Chaincode behavior
             throw new Error(`The parcel ${parcelId} does not exist`);
         }
+
+        if (functionName === 'getPublicParcelDetails') {
+            const parcelId = args[0];
+            // Reuse getParcel logic for mock data
+            const fullParcel = this.getMockData('getParcel', [parcelId]);
+
+            // Redact it
+            return {
+                parcelId: fullParcel.parcelId,
+                status: fullParcel.status,
+                location: 'Available',
+                ownerCount: fullParcel.title.owners.length,
+                owners: [{ type: 'Redacted', share: 100 }],
+                disputeStatus: 'Clear',
+                mortgageStatus: 'Clear'
+            };
+        }
+
         return {};
     }
 }

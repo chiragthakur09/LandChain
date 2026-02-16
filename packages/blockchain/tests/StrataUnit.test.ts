@@ -22,16 +22,16 @@ describe('LandChainContract: Strata Titling', () => {
         it('should create a Strata Unit if parent is FREE', async () => {
             // Mock Parent Parcel
             const parentParcel = new LandParcel();
-            parentParcel.parcelId = 'PARCEL_PARENT_001';
+            parentParcel.parcelId = 'MH12PARENT0001_001';
             parentParcel.status = 'FREE';
 
-            mockStub.getState.withArgs('PARCEL_PARENT_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
+            mockStub.getState.withArgs('MH12PARENT0001_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
             mockStub.getState.withArgs('APT_101').resolves(Buffer.from('')); // Unit doesn't exist
 
-            const unit = await contract.createStrataUnit(ctx, 'APT_101', 'PARCEL_PARENT_001', 1, 1200, 'OWNER_APT_1');
+            const unit = await contract.createStrataUnit(ctx, 'APT_101', 'MH12PARENT0001_001', 1, 1200, 'OWNER_APT_1');
 
             expect(unit.unitId).to.equal('APT_101');
-            expect(unit.parentParcelId).to.equal('PARCEL_PARENT_001');
+            expect(unit.parentParcelId).to.equal('MH12PARENT0001_001');
             expect(unit.floor).to.equal(1);
             expect(unit.title.owners[0].ownerId).to.equal('OWNER_APT_1');
 
@@ -40,13 +40,13 @@ describe('LandChainContract: Strata Titling', () => {
 
         it('should fail if parent is LOCKED', async () => {
             const parentParcel = new LandParcel();
-            parentParcel.parcelId = 'PARCEL_PARENT_001';
+            parentParcel.parcelId = 'MH12PARENT0001_001';
             parentParcel.status = 'LOCKED'; // e.g. Tax Default
 
-            mockStub.getState.withArgs('PARCEL_PARENT_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
+            mockStub.getState.withArgs('MH12PARENT0001_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
 
             try {
-                await contract.createStrataUnit(ctx, 'APT_101', 'PARCEL_PARENT_001', 1, 1200, 'OWNER_APT_1');
+                await contract.createStrataUnit(ctx, 'APT_101', 'MH12PARENT0001_001', 1, 1200, 'OWNER_APT_1');
                 expect.fail('Should have failed');
             } catch (err: any) {
                 expect(err.message).to.include('Parent Parcel must be FREE');

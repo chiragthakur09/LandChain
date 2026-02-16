@@ -24,6 +24,13 @@ export class LandController {
         return this.fabricService.query('getParcel', id);
     }
 
+    @ApiOperation({ summary: 'Public Title Search (Sanitized)' })
+    @ApiResponse({ status: 200, description: 'Returns redacted parcel details for public verification' })
+    @Get('public/:id')
+    async getPublicParcelDetails(@Param('id') id: string) {
+        return this.fabricService.query('getPublicParcelDetails', id);
+    }
+
     @ApiOperation({ summary: 'Create New Land Parcel (Genesis)' })
     @ApiResponse({ status: 201, description: 'Parcel Created successfully' })
     @Post()
@@ -41,7 +48,13 @@ export class LandController {
             throw new BadRequestException('Invalid or Missing Auth Token. Please Verify Identity first.');
         }
 
-        return this.fabricService.submit('transferParcel', dto.parcelId, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString(), dto.paymentUtr);
+        const metadata = {
+            stampDuty: dto.stampDuty,
+            witnesses: dto.witnesses
+        };
+        const metadataJson = JSON.stringify(metadata);
+
+        return this.fabricService.submit('transferParcel', dto.parcelId, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString(), dto.paymentUtr, metadataJson);
     }
 
     @ApiOperation({ summary: 'Get Payment Details (UTR)' })

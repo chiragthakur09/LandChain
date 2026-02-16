@@ -35,6 +35,17 @@ export class TransferParcelDto {
 
     @ApiProperty({ example: 'MOCK_AADHAAR_TOKEN_...', description: 'Auth Token' })
     authToken: string;
+
+    // Phase 34: Comprehensive Metadata
+    @ApiProperty({ required: false, description: 'Stamp Duty Details' })
+    stampDuty?: {
+        challanNo: string;
+        amount: number;
+        date: number;
+    };
+
+    @ApiProperty({ required: false, description: 'Witness IDs/Hashes (Min 2)' })
+    witnesses?: string[];
 }
 
 export class ExecuteTransactionDto {

@@ -1,4 +1,3 @@
-```typescript
 import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { IdentityService } from './identity.service';

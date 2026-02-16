@@ -41,4 +41,14 @@ export class IdentityService {
         }
         return false;
     }
+
+    login(aadhaar: string, otp: string) {
+        if (otp === '123456') {
+            const payload = { aadhaar: aadhaar, role: 'CITIZEN' };
+            return {
+                accessToken: this.jwtService.sign(payload)
+            };
+        }
+        throw new Error('Invalid OTP');
+    }
 }

@@ -14,8 +14,8 @@ describe('FormatValidator (Phase 29)', () => {
         it('should fail if length is not 14', () => {
             expect(() => FormatValidator.validateULPIN('123')).to.throw('Invalid ULPIN Format');
         });
-        it('should fail if contains letters', () => {
-            expect(() => FormatValidator.validateULPIN('1409283746501A')).to.throw('Invalid ULPIN Format');
+        it('should fail if contains special characters', () => {
+            expect(() => FormatValidator.validateULPIN('123456789012@#')).to.throw('Invalid ULPIN Format');
         });
     });
 

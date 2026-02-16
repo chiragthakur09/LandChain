@@ -25,7 +25,7 @@ export class LandParcel {
     public geoJson: string = ''; // 2D Polygon coordinates
 
     @Property()
-    public status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED' | 'PENDING_SCRUTINY' = 'FREE';
+    public status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED' | 'PENDING_SCRUTINY' | 'PENDING_ATS' | 'LOCKED_FOR_SUCCESSION' = 'FREE';
 
     // Phase 20: India Specific Classifications
     @Property()
@@ -36,7 +36,7 @@ export class LandParcel {
 
     // Phase 26: Advanced Schema
     @Property()
-    public ulpinPNIU: string = ''; // 14-digit Bhu-Aadhar based on coordinates
+    public ulpinPNIU: string = ''; // 14-digit Bhu-Aadhar based on coordinates (Linked to geoJson)
 
     @Property()
     public isTribalProtected: boolean = false; // CNT/SPT Act

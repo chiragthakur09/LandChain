@@ -1,12 +1,13 @@
 
 export class FormatValidator {
 
-    // ULPIN: 14 Digits
+    // ULPIN: 14 Characters (Alpha-Numeric)
     // Standard: Bhu-Aadhar (Unique Land Parcel Identification Number)
     static validateULPIN(ulpin: string): boolean {
-        const ulpinRegex = /^\d{14}$/;
+        // Updated to support Alphanumeric as per real-world standard (e.g. State Code mixed)
+        const ulpinRegex = /^[a-zA-Z0-9]{14}$/;
         if (!ulpinRegex.test(ulpin)) {
-            throw new Error(`Invalid ULPIN Format. Must be 14 digits. Value: ${ulpin}`);
+            throw new Error(`Invalid ULPIN Format. Must be 14 alphanumeric characters. Value: ${ulpin}`);
         }
         return true;
     }
