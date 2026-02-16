@@ -36,7 +36,7 @@ describe('Strata Extensions (Checklist)', () => {
 
     const createMockUnit = (id: string, parentId: string): StrataUnit => {
         return {
-            unitId: id,
+            ulpin: id,
             parentUlpin: parentId,
             status: 'FREE',
             title: { owners: [{ ownerId: 'OWNER_1', sharePercentage: 100 }] } as any,
@@ -46,49 +46,49 @@ describe('Strata Extensions (Checklist)', () => {
     };
 
     it('should BLOCK sale of Unit if Parent Land is LOCKED (Mortgage)', async () => {
-        const parent = createMockParent('PARENT_1', 'LOCKED');
-        const unit = createMockUnit('UNIT_101', 'PARENT_1');
+        const parent = createMockParent('MH12PAR0000001', 'LOCKED');
+        const unit = createMockUnit('MH12UNT0000101', 'MH12PAR0000001');
 
-        mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
-        mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
+        mockStub.getState.withArgs('MH12UNT0000101').resolves(Buffer.from(JSON.stringify(unit)));
+        mockStub.getState.withArgs('MH12PAR0000001').resolves(Buffer.from(JSON.stringify(parent)));
 
-        const txData = { ulpin: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+        const txData = { ulpin: 'MH12UNT0000101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
 
         try {
             await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
             expect.fail('Should have thrown error');
         } catch (err: any) {
-            expect(err.message).to.include('Parent Land (PARENT_1) is NOT Free');
+            expect(err.message).to.include('Parent Land (MH12PAR0000001) is NOT Free');
             expect(err.message).to.include('LOCKED');
         }
     });
 
     it('should BLOCK sale of Unit if Parent Land is RETIRED', async () => {
-        const parent = createMockParent('PARENT_1', 'RETIRED');
-        const unit = createMockUnit('UNIT_101', 'PARENT_1');
+        const parent = createMockParent('MH12PAR0000001', 'RETIRED');
+        const unit = createMockUnit('MH12UNT0000101', 'MH12PAR0000001');
 
-        mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
-        mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
+        mockStub.getState.withArgs('MH12UNT0000101').resolves(Buffer.from(JSON.stringify(unit)));
+        mockStub.getState.withArgs('MH12PAR0000001').resolves(Buffer.from(JSON.stringify(parent)));
 
-        const txData = { ulpin: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+        const txData = { ulpin: 'MH12UNT0000101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
 
         try {
             await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
             expect.fail('Should have thrown error');
         } catch (err: any) {
-            expect(err.message).to.include('Parent Land (PARENT_1) is NOT Free');
+            expect(err.message).to.include('Parent Land (MH12PAR0000001) is NOT Free');
             expect(err.message).to.include('RETIRED');
         }
     });
 
     it('should ALLOW sale if Parent is FREE', async () => {
-        const parent = createMockParent('PARENT_1', 'FREE');
-        const unit = createMockUnit('UNIT_101', 'PARENT_1');
+        const parent = createMockParent('MH12PAR0000001', 'FREE');
+        const unit = createMockUnit('MH12UNT0000101', 'MH12PAR0000001');
 
-        mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
-        mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
+        mockStub.getState.withArgs('MH12UNT0000101').resolves(Buffer.from(JSON.stringify(unit)));
+        mockStub.getState.withArgs('MH12PAR0000001').resolves(Buffer.from(JSON.stringify(parent)));
 
-        const txData = { ulpin: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+        const txData = { ulpin: 'MH12UNT0000101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
 
         await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
 

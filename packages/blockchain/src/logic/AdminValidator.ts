@@ -31,8 +31,8 @@ export class AdminValidator {
      * Strata Units cannot be handed over (SALE) without an Occupancy Certificate (OC).
      */
     public static async validateRERACompliance(ctx: Context, asset: any, txType: string): Promise<void> {
-        // Check if Strata Unit
-        if (asset.unitId && txType === 'SALE') {
+        // Check if Strata Unit (has parentUlpin)
+        if (('parentUlpin' in asset) && txType === 'SALE') {
             // 1. Check Occupancy Certificate (OC)
             if (!asset.ocDocumentHash || asset.ocDocumentHash === '') {
                 throw new Error('RERA Compliance: Cannot Sell Strata Unit without Occupancy Certificate (OC).');

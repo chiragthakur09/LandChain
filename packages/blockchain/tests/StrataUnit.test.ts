@@ -26,16 +26,16 @@ describe('LandChainContract: Strata Titling', () => {
             parentParcel.status = 'FREE';
 
             mockStub.getState.withArgs('MH12PARENT0001_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
-            mockStub.getState.withArgs('APT_101').resolves(Buffer.from('')); // Unit doesn't exist
+            mockStub.getState.withArgs('MH12APT0000001').resolves(Buffer.from('')); // Unit doesn't exist
 
-            const unit = await contract.createStrataUnit(ctx, 'APT_101', 'MH12PARENT0001_001', 1, 1200, 'OWNER_APT_1');
+            const unit = await contract.createStrataUnit(ctx, 'MH12APT0000001', 'MH12PARENT0001_001', 1, 1200, 'OWNER_APT_1');
 
-            expect(unit.unitId).to.equal('APT_101');
+            expect(unit.ulpin).to.equal('MH12APT0000001');
             expect(unit.parentUlpin).to.equal('MH12PARENT0001_001');
             expect(unit.floor).to.equal(1);
             expect(unit.title.owners[0].ownerId).to.equal('OWNER_APT_1');
 
-            sinon.assert.calledWith(mockStub.putState, 'APT_101', sinon.match.any);
+            sinon.assert.calledWith(mockStub.putState, 'MH12APT0000001', sinon.match.any);
         });
 
         it('should fail if parent is LOCKED', async () => {
@@ -46,7 +46,7 @@ describe('LandChainContract: Strata Titling', () => {
             mockStub.getState.withArgs('MH12PARENT0001_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
 
             try {
-                await contract.createStrataUnit(ctx, 'APT_101', 'MH12PARENT0001_001', 1, 1200, 'OWNER_APT_1');
+                await contract.createStrataUnit(ctx, 'MH12APT0000001', 'MH12PARENT0001_001', 1, 1200, 'OWNER_APT_1');
                 expect.fail('Should have failed');
             } catch (err: any) {
                 expect(err.message).to.include('Parent Parcel must be FREE');
@@ -58,17 +58,17 @@ describe('LandChainContract: Strata Titling', () => {
         it('should execute SALE on a StrataUnit', async () => {
             // Mock Strata Unit
             const unit = new StrataUnit();
-            unit.unitId = 'UNIT_505';
-            unit.parentUlpin = 'PARCEL_A';
+            unit.ulpin = 'MH12UNT0000505';
+            unit.parentUlpin = 'MH12PAR000000A';
             unit.status = 'FREE';
             unit.title = { owners: [{ ownerId: 'BUILDER', sharePercentage: 100 }] } as any;
             unit.ocDocumentHash = 'QmValidOCHash12345678901234567890123456789012'; // Added for Phase 29 RERA
 
             // Mock Parent as FREE
-            mockStub.getState.withArgs('PARCEL_A').resolves(Buffer.from(JSON.stringify({ status: 'FREE' })));
-            mockStub.getState.withArgs('UNIT_505').resolves(Buffer.from(JSON.stringify(unit)));
+            mockStub.getState.withArgs('MH12PAR000000A').resolves(Buffer.from(JSON.stringify({ status: 'FREE' })));
+            mockStub.getState.withArgs('MH12UNT0000505').resolves(Buffer.from(JSON.stringify(unit)));
 
-            await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'UNIT_505', buyerId: 'BUYER_1' }), '');
+            await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'MH12UNT0000505', buyerId: 'BUYER_1' }), '');
 
             // Verify Owner Update
             const putArgs = mockStub.putState.args[0];
@@ -78,14 +78,14 @@ describe('LandChainContract: Strata Titling', () => {
 
         it('should block SALE if StrataUnit is LOCKED', async () => {
             const unit: any = {
-                unitId: 'APT_LOCKED',
+                ulpin: 'MH12LCK0000001',
                 status: 'LOCKED',
                 title: { owners: [{ ownerId: 'OWNER', sharePercentage: 100 }] }
             };
-            mockStub.getState.withArgs('APT_LOCKED').resolves(Buffer.from(JSON.stringify(unit)));
+            mockStub.getState.withArgs('MH12LCK0000001').resolves(Buffer.from(JSON.stringify(unit)));
 
             try {
-                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'APT_LOCKED' }), 'HASH');
+                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'MH12LCK0000001' }), 'HASH');
                 expect.fail('Should fail');
             } catch (err: any) {
                 expect(err.message).to.include('Asset is LOCKED');

@@ -107,7 +107,7 @@ export class LandController {
     @ApiOperation({ summary: 'Create Strata Unit (Vertical Property)' })
     @Post('strata')
     async createStrataUnit(@Body() dto: CreateStrataUnitDto) {
-        return this.fabricService.submit('createStrataUnit', dto.unitId, dto.parentUlpin, dto.floor.toString(), dto.carpetArea.toString(), dto.ownerId);
+        return this.fabricService.submit('createStrataUnit', dto.ulpin, dto.parentUlpin, dto.floor.toString(), dto.carpetArea.toString(), dto.ownerId);
     }
 
     @ApiOperation({ summary: 'Finalize Title (Conclusive Transition)' })

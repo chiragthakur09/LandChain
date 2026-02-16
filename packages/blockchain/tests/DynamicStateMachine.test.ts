@@ -90,41 +90,41 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
     });
 
     it('should execute PARTITION transaction correctly', async () => {
-        const parcel = createMockParcel('PARCEL_100');
-        mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
+        const parcel = createMockParcel('MH12PAR0000100');
+        mockStub.getState.withArgs('MH12PAR0000100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         const txData = {
-            ulpin: 'PARCEL_100',
+            ulpin: 'MH12PAR0000100',
             subParcels: [
-                { id: 'PARCEL_100_1', area: 5, owner: 'OWNER_A', surveySuffix: '1' },
-                { id: 'PARCEL_100_2', area: 5, owner: 'OWNER_A', surveySuffix: '2' }
+                { id: 'MH12PAR0000101', area: 5, owner: 'OWNER_A', surveySuffix: '1' },
+                { id: 'MH12PAR0000102', area: 5, owner: 'OWNER_A', surveySuffix: '2' }
             ]
         };
 
         await contract.executeTransaction(ctx, 'PARTITION', JSON.stringify(txData), 'MAP_HASH');
 
         // Should retire parent
-        const parentPut = mockStub.putState.withArgs('PARCEL_100').firstCall;
+        const parentPut = mockStub.putState.withArgs('MH12PAR0000100').firstCall;
         const retiredParent = JSON.parse(parentPut.args[1].toString()) as LandParcel;
         expect(retiredParent.status).to.equal('RETIRED');
 
         // Should create 2 children
-        const child1Put = mockStub.putState.withArgs('PARCEL_100_1').firstCall;
+        const child1Put = mockStub.putState.withArgs('MH12PAR0000101').firstCall;
         const child1 = JSON.parse(child1Put.args[1].toString()) as LandParcel;
         expect(child1.subDivision).to.equal('0/1');
         expect(child1.area).to.equal(5);
         expect(child1.status).to.equal('FREE');
 
-        const child2Put = mockStub.putState.withArgs('PARCEL_100_2').firstCall;
+        const child2Put = mockStub.putState.withArgs('MH12PAR0000102').firstCall;
         expect(child2Put).to.exist;
     });
 
     it('should execute CONVERSION transaction correctly', async () => {
-        const parcel = createMockParcel('PARCEL_100');
-        mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
+        const parcel = createMockParcel('MH12PAR0000100');
+        mockStub.getState.withArgs('MH12PAR0000100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         const txData = {
-            ulpin: 'PARCEL_100',
+            ulpin: 'MH12PAR0000100',
             newUse: 'NON_AGRICULTURAL'
         };
 
@@ -137,10 +137,10 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
     });
 
     it('should block transaction if asset is LOCKED', async () => {
-        const parcel = createMockParcel('PARCEL_LOCKED', 'LOCKED');
-        mockStub.getState.withArgs('PARCEL_LOCKED').resolves(Buffer.from(JSON.stringify(parcel)));
+        const parcel = createMockParcel('MH12LCK0000001', 'LOCKED');
+        mockStub.getState.withArgs('MH12LCK0000001').resolves(Buffer.from(JSON.stringify(parcel)));
 
-        const txData = { ulpin: 'PARCEL_LOCKED' };
+        const txData = { ulpin: 'MH12LCK0000001' };
 
         try {
             await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), 'HASH');
@@ -151,11 +151,11 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
     });
 
     it('should block unknown transaction type', async () => {
-        const parcel = createMockParcel('PARCEL_100');
-        mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
+        const parcel = createMockParcel('MH12PAR0000100');
+        mockStub.getState.withArgs('MH12PAR0000100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         try {
-            await contract.executeTransaction(ctx, 'UNKNOWN_TYPE', JSON.stringify({ ulpin: 'PARCEL_100' }), 'HASH');
+            await contract.executeTransaction(ctx, 'UNKNOWN_TYPE', JSON.stringify({ ulpin: 'MH12PAR0000100' }), 'HASH');
             expect.fail('Should have thrown error');
         } catch (err: any) {
             expect(err.message).to.include('Unknown Transaction Type');

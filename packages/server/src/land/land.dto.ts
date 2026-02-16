@@ -107,8 +107,8 @@ export class ResolveDisputeDto {
 }
 
 export class CreateStrataUnitDto {
-    @ApiProperty({ example: 'APT_101' })
-    unitId: string;
+    @ApiProperty({ example: 'MH12APT0000001', description: 'ULPIN for the Unit (Flat/Shop)' })
+    ulpin: string;
 
     @ApiProperty({ example: 'PARCEL_001' })
     parentUlpin: string;

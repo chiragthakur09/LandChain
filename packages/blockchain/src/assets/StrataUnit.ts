@@ -6,7 +6,7 @@ import { ChargeRecord } from './ChargeRecord';
 @Object()
 export class StrataUnit {
     @Property()
-    public unitId: string = ''; // e.g. "APT_101"
+    public ulpin: string = ''; // 14-digit ULPIN for the Unit
 
     @Property()
     public parentUlpin: string = ''; // Link to Parent LandParcel

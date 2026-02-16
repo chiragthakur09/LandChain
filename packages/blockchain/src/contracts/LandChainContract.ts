@@ -307,16 +307,19 @@ export class LandChainContract extends Contract {
     // --- Strata Titling (Vertical Units) ---
 
     @Transaction()
-    public async createStrataUnit(ctx: Context, unitId: string, parentUlpin: string, floor: number, carpetArea: number, ownerId: string): Promise<StrataUnit> {
+    public async createStrataUnit(ctx: Context, ulpin: string, parentUlpin: string, floor: number, carpetArea: number, ownerId: string): Promise<StrataUnit> {
         // 1. Check Parent
         const parent = await this.getParcel(ctx, parentUlpin);
         if (parent.status !== 'FREE') {
             throw new Error(`Parent Parcel must be FREE to create Strata Units`);
         }
 
+        // Validate Unit ULPIN
+        FormatValidator.validateULPIN(ulpin);
+
         // 2. Create Unit
         const unit = new StrataUnit();
-        unit.unitId = unitId;
+        unit.ulpin = ulpin;
         unit.parentUlpin = parentUlpin;
         unit.floor = floor;
         unit.carpetArea = carpetArea;
@@ -331,22 +334,23 @@ export class LandChainContract extends Contract {
 
         // 3. Init RoT for Unit
         unit.title = new TitleRecord();
-        unit.title.titleId = `TITLE_${unitId}`;
+        unit.title.titleId = `TITLE_${ulpin}`;
+        unit.title.ulpin = ulpin;
         unit.title.owners = [{ ownerId: ownerId, sharePercentage: 100 }];
 
         unit.disputes = [];
         unit.charges = [];
 
-        await ctx.stub.putState(unitId, Buffer.from(JSON.stringify(unit)));
+        await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(unit)));
         return unit;
     }
 
     @Transaction()
     @Returns('StrataUnit')
-    public async getStrataUnit(ctx: Context, unitId: string): Promise<StrataUnit> {
-        const unitJSON = await ctx.stub.getState(unitId);
+    public async getStrataUnit(ctx: Context, ulpin: string): Promise<StrataUnit> {
+        const unitJSON = await ctx.stub.getState(ulpin);
         if (!unitJSON || unitJSON.length === 0) {
-            throw new Error(`Strata Unit ${unitId} does not exist`);
+            throw new Error(`Strata Unit ${ulpin} does not exist`);
         }
         return JSON.parse(unitJSON.toString());
     }
@@ -450,11 +454,7 @@ export class LandChainContract extends Contract {
         switch (transactionType) {
             case 'SALE':
                 // RERA Check (If StrataUnit)
-                if (parcel.docHash === undefined) { // HACK: StrataUnit structure check
-                    // It's likely a StrataUnit if it has parentUlpin, but here we are using 'any' type.
-                    // Let's assume for now we check if specific fields exist.
-                }
-                if (parcel.unitId) { // It is a Strata Unit
+                if ('parentUlpin' in parcel && (parcel as any).parentUlpin) { // It is a Strata Unit
                     await AdminValidator.validateRERACompliance(ctx, parcel, transactionType);
                 }
 
@@ -545,6 +545,9 @@ export class LandChainContract extends Contract {
         await ctx.stub.putState(parentParcel.ulpin, Buffer.from(JSON.stringify(parentParcel)));
 
         for (const child of data.subParcels) {
+            // Validate New ULPIN
+            FormatValidator.validateULPIN(child.id);
+
             const newParcel = new LandParcel();
             Object.assign(newParcel, parentParcel);
             newParcel.ulpin = child.id;
@@ -626,6 +629,9 @@ export class LandChainContract extends Contract {
         if (!constituentUlpins || constituentUlpins.length < 2) {
             throw new Error('Amalgamation requires at least two parcels.');
         }
+
+        // Validate New ULPIN
+        FormatValidator.validateULPIN(newUlpin);
 
         const sourceParcels: LandParcel[] = [];
         let primaryOwner = '';

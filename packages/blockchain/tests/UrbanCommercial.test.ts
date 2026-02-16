@@ -56,29 +56,29 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
     };
 
     it('should successfully amalgamate two parcels', async () => {
-        const p1 = createMockParcel('P1', 'DEV_1', 'FREE', 10);
-        const p2 = createMockParcel('P2', 'DEV_1', 'FREE', 15);
+        const p1 = createMockParcel('MH12PAR00000P1', 'DEV_1', 'FREE', 10);
+        const p2 = createMockParcel('MH12PAR00000P2', 'DEV_1', 'FREE', 15);
 
-        mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
-        mockStub.getState.withArgs('P2').resolves(Buffer.from(JSON.stringify(p2)));
+        mockStub.getState.withArgs('MH12PAR00000P1').resolves(Buffer.from(JSON.stringify(p1)));
+        mockStub.getState.withArgs('MH12PAR00000P2').resolves(Buffer.from(JSON.stringify(p2)));
 
         const txData = {
-            constituentUlpins: ['P1', 'P2'],
-            newUlpin: 'P_MERGED',
+            constituentUlpins: ['MH12PAR00000P1', 'MH12PAR00000P2'],
+            newUlpin: 'MH12MRG0000001',
             newGeoJson: 'MERGED_POLY'
         };
 
         await contract.executeTransaction(ctx, 'AMALGAMATE_PARCELS', JSON.stringify(txData), '');
 
         // Check Retirements
-        const p1Put = mockStub.putState.withArgs('P1').firstCall;
+        const p1Put = mockStub.putState.withArgs('MH12PAR00000P1').firstCall;
         expect(JSON.parse(p1Put.args[1].toString()).status).to.equal('RETIRED');
 
-        const p2Put = mockStub.putState.withArgs('P2').firstCall;
+        const p2Put = mockStub.putState.withArgs('MH12PAR00000P2').firstCall;
         expect(JSON.parse(p2Put.args[1].toString()).status).to.equal('RETIRED');
 
         // Check Creation
-        const mergePut = mockStub.putState.withArgs('P_MERGED').firstCall;
+        const mergePut = mockStub.putState.withArgs('MH12MRG0000001').firstCall;
         const merged = JSON.parse(mergePut.args[1].toString());
 
         expect(merged.status).to.equal('FREE');
@@ -87,13 +87,13 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
     });
 
     it('should fail amalgamation if owners mismatch', async () => {
-        const p1 = createMockParcel('P1', 'DEV_1');
-        const p2 = createMockParcel('P2', 'OTHER_GUY');
+        const p1 = createMockParcel('MH12PAR00000P1', 'DEV_1');
+        const p2 = createMockParcel('MH12PAR00000P2', 'OTHER_GUY');
 
-        mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
-        mockStub.getState.withArgs('P2').resolves(Buffer.from(JSON.stringify(p2)));
+        mockStub.getState.withArgs('MH12PAR00000P1').resolves(Buffer.from(JSON.stringify(p1)));
+        mockStub.getState.withArgs('MH12PAR00000P2').resolves(Buffer.from(JSON.stringify(p2)));
 
-        const txData = { constituentUlpins: ['P1', 'P2'], newUlpin: 'P_X', newGeoJson: '' };
+        const txData = { constituentUlpins: ['MH12PAR00000P1', 'MH12PAR00000P2'], newUlpin: 'MH12MRG000000X', newGeoJson: '' };
 
         try {
             await contract.executeTransaction(ctx, 'AMALGAMATE_PARCELS', JSON.stringify(txData), '');
@@ -104,13 +104,13 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
     });
 
     it('should fail if a constituent parcel is LOCKED', async () => {
-        const p1 = createMockParcel('P1', 'DEV_1');
-        const p2 = createMockParcel('P2', 'DEV_1', 'LOCKED');
+        const p1 = createMockParcel('MH12PAR00000P1', 'DEV_1');
+        const p2 = createMockParcel('MH12PAR00000P2', 'DEV_1', 'LOCKED');
 
-        mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
-        mockStub.getState.withArgs('P2').resolves(Buffer.from(JSON.stringify(p2)));
+        mockStub.getState.withArgs('MH12PAR00000P1').resolves(Buffer.from(JSON.stringify(p1)));
+        mockStub.getState.withArgs('MH12PAR00000P2').resolves(Buffer.from(JSON.stringify(p2)));
 
-        const txData = { constituentUlpins: ['P1', 'P2'], newUlpin: 'P_X', newGeoJson: '' };
+        const txData = { constituentUlpins: ['MH12PAR00000P1', 'MH12PAR00000P2'], newUlpin: 'MH12MRG000000X', newGeoJson: '' };
 
         try {
             await contract.executeTransaction(ctx, 'AMALGAMATE_PARCELS', JSON.stringify(txData), '');
