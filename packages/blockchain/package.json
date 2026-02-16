@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "fabric-chaincode-node start"
+    "start": "fabric-chaincode-node start",
+    "test": "ts-mocha tests/**/*.test.ts"
   },
   "engines": {
     "node": ">=18"
@@ -17,7 +18,15 @@
     "sort-keys-recursive": "^2.1.2"
   },
   "devDependencies": {
+    "@types/chai": "^5.2.3",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^18.0.0",
+    "@types/sinon": "^21.0.0",
+    "chai": "^6.2.2",
+    "mocha": "^11.7.5",
+    "sinon": "^21.0.1",
+    "ts-mocha": "^11.1.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   }
 }

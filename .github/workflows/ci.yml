@@ -1,0 +1,31 @@
+name: LandChain CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install Dependencies
+      run: npm install
+      
+    - name: Build Blockchain Package
+      run: npm run build --workspace=packages/blockchain
+      
+    - name: Run Blockchain Tests
+      run: npm test --workspace=packages/blockchain
