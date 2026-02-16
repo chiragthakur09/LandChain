@@ -91,7 +91,7 @@ describe('Phase 12: Real World Nuances', () => {
             const parcel = new LandParcel();
             parcel.parcelId = 'P_LOCKED';
             parcel.status = 'LITIGATION';
-            parcel.disputes = [{ disputeId: 'D1', parcelId: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL', status: 'PENDING', timestamp: 0 }];
+            parcel.disputes = [{ disputeId: 'D1', parcelId: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: 0 }];
             parcel.charges = [];
 
             mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
@@ -109,7 +109,7 @@ describe('Phase 12: Real World Nuances', () => {
             const parcel = new LandParcel();
             parcel.parcelId = 'P_LOCKED';
             parcel.status = 'LITIGATION'; // Could be LITIGATION or LOCKED, logic sets specific states
-            parcel.disputes = [{ disputeId: 'D1', parcelId: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL', status: 'PENDING', timestamp: 0 }];
+            parcel.disputes = [{ disputeId: 'D1', parcelId: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: 0 }];
             parcel.charges = [{ chargeId: 'C1', parcelId: 'P_LOCKED', type: 'MORTGAGE', holder: 'BANK', amount: 100, active: true, timestamp: 0 }];
 
             mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));

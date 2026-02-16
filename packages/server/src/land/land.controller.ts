@@ -1,9 +1,13 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, BadRequestException } from '@nestjs/common';
 import { FabricService } from '../fabric/fabric.service';
+import { IdentityService } from '../identity/identity.service';
 
 @Controller('land')
 export class LandController {
-    constructor(private readonly fabricService: FabricService) { }
+    constructor(
+        private readonly fabricService: FabricService,
+        private readonly identityService: IdentityService
+    ) { }
 
     @Get(':id')
     async getParcel(@Param('id') id: string) {
@@ -17,14 +21,17 @@ export class LandController {
     }
 
     @Post('transfer')
-    async transferParcel(@Body() transferDto: { parcelId: string, newOwnerId: string, salePrice: number }) {
-        const { parcelId, newOwnerId, salePrice } = transferDto;
-        return this.fabricService.submit('transferParcel', parcelId, newOwnerId, salePrice.toString());
+    async transferParcel(@Body() dto: { parcelId: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number, authToken: string }) {
+        // 1. Verify Auth Token (Mock Identity Check)
+        if (!dto.authToken || !dto.authToken.startsWith('MOCK_AADHAAR_TOKEN_')) {
+            throw new BadRequestException('Invalid or Missing Auth Token. Please Verify Identity first.');
+        }
+
+        return this.fabricService.submit('transferParcel', dto.parcelId, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString());
     }
 
     @Post('subdivide')
     async subdivideParcel(@Body() dto: { parentParcelId: string, childrenJson: string }) {
-        // childrenJson should be stringified array of children objects
         return this.fabricService.submit('subdivideParcel', dto.parentParcelId, dto.childrenJson);
     }
 
@@ -36,6 +43,11 @@ export class LandController {
     @Post('intimation')
     async recordIntimation(@Body() dto: { parcelId: string, category: 'DISPUTE' | 'CHARGE', type: string, issuer: string, details: string }) {
         return this.fabricService.submit('recordIntimation', dto.parcelId, dto.category, dto.type, dto.issuer, dto.details);
+    }
+
+    @Post('resolve')
+    async resolveDispute(@Body() dto: { parcelId: string, disputeId: string, resolution: string }) {
+        return this.fabricService.submit('resolveDispute', dto.parcelId, dto.disputeId, dto.resolution);
     }
 
     @Post('strata')

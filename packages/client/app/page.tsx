@@ -1,4 +1,10 @@
 import { HeroSearch } from "@/components/hero-search";
+import dynamic from 'next/dynamic';
+
+const LandMap = dynamic(() => import('@/components/LandMap'), {
+    ssr: false,
+    loading: () => <div className="h-96 w-full bg-slate-100 rounded-lg animate-pulse flex items-center justify-center text-slate-400">Loading GIS Data...</div>
+});
 
 export default function Home() {
     return (
@@ -42,6 +48,16 @@ export default function Home() {
                     <div className="pt-8">
                         <HeroSearch />
                     </div>
+                </div>
+
+                {/* GIS Map Section */}
+                <div className="max-w-7xl mx-auto mt-12 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
+                    <div className="bg-white p-2 rounded-xl shadow-2xl border border-gray-200">
+                        <LandMap />
+                    </div>
+                    <p className="text-center text-sm text-gray-500 mt-2">
+                        Live GIS Data: Green = Conclusive Title, Red = Litigation/Locked
+                    </p>
                 </div>
             </div>
 
