@@ -38,6 +38,24 @@ LandChain utilizes **Hyperledger Fabric**, an enterprise-grade permissioned bloc
 *   **Smart Contracts (Chaincode)**: The business logic that governs state transitions.
 *   **Consensus**: A raft-based ordering service ensuring that valid transactions are committed in a specific order.
 
+```mermaid
+graph TD
+    User[Citizen / Farmer] -->|Next.js App| Client[Client Node]
+    Client -->|REST API| Server[NestJS Server]
+    
+    subgraph Hyperledger Fabric Network
+        Server -->|Gateway| Peer1[Revenue Department Node]
+        Server -->|Gateway| Peer2[Bank Node]
+        Server -->|Gateway| Peer3[Court Node]
+        
+        Peer1 -->|Consensus| Orderer[Ordering Service]
+        Peer2 -->|Consensus| Orderer
+        Peer3 -->|Consensus| Orderer
+        
+        Peer1 -->|Ledger| WorldState[World State (LevelDB)]
+    end
+```
+
 ### 3.2 Key Innovations
 
 #### 3.2.1 Atomic Mutation

@@ -67,6 +67,7 @@ Mints a new Apartment/Unit linked to a parent land.
 }
 ```
 
+
 ### 5. Finalize Title (Indemnity)
 **POST** `/land/finalize`
 
@@ -76,5 +77,20 @@ Attempts to mark the title as Conclusive after the statutory period.
 ```json
 {
   "parcelId": "PARCEL_001"
+}
+```
+
+### 6. Execute Generic Transaction (Pluggable)
+**POST** `/land/transaction`
+
+Executes any supported transaction type via the dynamic state machine.
+
+**Body:**
+```json
+{
+  "transactionType": "SALE", // or PARTITION, INHERITANCE, CONVERSION
+  "transactionData": { ... }, // Payload specific to type
+  "evidenceHash": "QmHashOfDoc",
+  "authToken": "MOCK_AADHAAR_TOKEN_..."
 }
 ```

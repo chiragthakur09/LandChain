@@ -16,7 +16,7 @@ export class LandParcel {
     public subDivision: string = ''; // e.g., "1", "2/A"
 
     @Property()
-    public landUseType: 'AGRICULTURAL' | 'NON_AGRICULTURAL' | 'RESIDENTIAL' | 'COMMERCIAL' = 'AGRICULTURAL';
+    public landUseType: 'AGRICULTURAL' | 'NON_AGRICULTURAL' | 'INDUSTRIAL' | 'FOREST' | 'RESERVED' = 'AGRICULTURAL';
 
     @Property()
     public area: number = 0; // in Acres/Gunthas
@@ -25,7 +25,7 @@ export class LandParcel {
     public geoJson: string = ''; // 2D Polygon coordinates
 
     @Property()
-    public status: 'FREE' | 'MORTGAGED' | 'LITIGATION' | 'LOCKED' | 'RETIRED' = 'FREE';
+    public status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED' = 'FREE';
 
     // @Property()
     // public ownerId: string = ''; // DEPRECATED in favor of TitleRecord

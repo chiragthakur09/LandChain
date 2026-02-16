@@ -9,7 +9,7 @@ export class ChargeRecord {
     public parcelId: string = '';
 
     @Property()
-    public type: 'MORTGAGE' | 'LEASE' | 'EASEMENT' | 'TAX_DEFAULT' = 'MORTGAGE';
+    public type: 'MORTGAGE' | 'LEASE' | 'EASEMENT' | 'TAX_DEFAULT' | 'GOVERNMENT_CHARGE' = 'MORTGAGE';
 
     @Property()
     public holder: string = ''; // Bank, Municipality, or Beneficiary

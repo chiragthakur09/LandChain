@@ -26,12 +26,17 @@ describe('Phase 12: Real World Nuances', () => {
             parcel.disputes = [];
             parcel.charges = [];
 
-            mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
+            mockStub.getState.callsFake(async (key: string) => {
+                if (key === 'P1') return Buffer.from(JSON.stringify(parcel));
+                if (key.startsWith('PAY_')) return Buffer.alloc(0);
+                return Buffer.alloc(0);
+            });
 
-            await contract.transferParcel(ctx, 'P1', 'SELLER', 'BUYER', 50, 500000);
+            await contract.transferParcel(ctx, 'P1', 'SELLER', 'BUYER', 50, 500000, 'UTR_123');
 
-            const putStateArgs = mockStub.putState.getCall(0).args;
-            const updatedParcel = JSON.parse(putStateArgs[1].toString());
+            const putStateCalls = mockStub.putState.getCalls();
+            const parcelCall = putStateCalls.find(call => call.args[0] === 'P1');
+            const updatedParcel = JSON.parse(parcelCall!.args[1].toString());
 
             expect(updatedParcel.title.owners).to.have.lengthOf(2);
             expect(updatedParcel.title.owners.find((o: any) => o.ownerId === 'SELLER').sharePercentage).to.equal(50);
@@ -49,12 +54,15 @@ describe('Phase 12: Real World Nuances', () => {
             parcel.disputes = [];
             parcel.charges = [];
 
-            mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
+            mockStub.getState.callsFake(async (key: string) => {
+                if (key === 'P1') return Buffer.from(JSON.stringify(parcel));
+                return Buffer.alloc(0);
+            });
 
             try {
                 // A owns 50% but tries to sell 100% (the whole property)
                 // This triggers the "Seller only owns 50%" error BEFORE the Multi-Sig check
-                await contract.transferParcel(ctx, 'P1', 'A', 'BUYER', 100, 1000000);
+                await contract.transferParcel(ctx, 'P1', 'A', 'BUYER', 100, 1000000, 'UTR_FAIL');
                 expect.fail('Should have blocked 100% sale');
             } catch (err: any) {
                 expect(err.message).to.include('Seller only owns 50%');
@@ -72,12 +80,17 @@ describe('Phase 12: Real World Nuances', () => {
             parcel.disputes = [];
             parcel.charges = [];
 
-            mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
+            mockStub.getState.callsFake(async (key: string) => {
+                if (key === 'P1') return Buffer.from(JSON.stringify(parcel));
+                if (key.startsWith('PAY_')) return Buffer.alloc(0);
+                return Buffer.alloc(0);
+            });
 
-            await contract.transferParcel(ctx, 'P1', 'A', 'BUYER', 50, 500000);
+            await contract.transferParcel(ctx, 'P1', 'A', 'BUYER', 50, 500000, 'UTR_456');
 
-            const putStateArgs = mockStub.putState.getCall(0).args;
-            const updatedParcel = JSON.parse(putStateArgs[1].toString());
+            const putStateCalls = mockStub.putState.getCalls();
+            const parcelCall = putStateCalls.find(call => call.args[0] === 'P1');
+            const updatedParcel = JSON.parse(parcelCall!.args[1].toString());
 
             // A is removed (0%), Buyer added
             expect(updatedParcel.title.owners).to.have.lengthOf(2);

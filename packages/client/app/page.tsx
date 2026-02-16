@@ -6,6 +6,8 @@ const LandMap = dynamic(() => import('@/components/LandMap'), {
     loading: () => <div className="h-96 w-full bg-slate-100 rounded-lg animate-pulse flex items-center justify-center text-slate-400">Loading GIS Data...</div>
 });
 
+const PublicPayment = dynamic(() => import('@/components/PublicPayment'), { ssr: false });
+
 export default function Home() {
     return (
         <main className="min-h-screen bg-slate-50">
@@ -58,6 +60,10 @@ export default function Home() {
                     <p className="text-center text-sm text-gray-500 mt-2">
                         Live GIS Data: Green = Conclusive Title, Red = Litigation/Locked
                     </p>
+                </div>
+
+                <div className="mt-16">
+                    <PublicPayment />
                 </div>
             </div>
 

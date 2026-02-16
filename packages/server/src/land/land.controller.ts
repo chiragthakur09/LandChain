@@ -21,13 +21,35 @@ export class LandController {
     }
 
     @Post('transfer')
-    async transferParcel(@Body() dto: { parcelId: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number, authToken: string }) {
+    async transferParcel(@Body() dto: { parcelId: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number, paymentUtr: string, authToken: string }) {
         // 1. Verify Auth Token (Mock Identity Check)
         if (!dto.authToken || !dto.authToken.startsWith('MOCK_AADHAAR_TOKEN_')) {
             throw new BadRequestException('Invalid or Missing Auth Token. Please Verify Identity first.');
         }
 
-        return this.fabricService.submit('transferParcel', dto.parcelId, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString());
+        return this.fabricService.submit('transferParcel', dto.parcelId, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString(), dto.paymentUtr);
+    }
+
+    @Get('payment/:utr')
+    async getPaymentDetails(@Param('utr') utr: string) {
+        try {
+            const payment = await this.fabricService.query('getPaymentDetails', utr);
+            return payment;
+        } catch (error) {
+            throw new BadRequestException(`Payment ${utr} not found.`);
+        }
+    }
+
+    // Phase 16: Generic Pluggable Transaction Endpoint
+    @Post('transaction')
+    async executeTransaction(@Body() dto: { transactionType: string, transactionData: any, evidenceHash: string, authToken: string }) {
+        if (!dto.authToken || !dto.authToken.startsWith('MOCK_AADHAAR_TOKEN_')) {
+            throw new BadRequestException('Invalid or Missing Auth Token.');
+        }
+
+        // Pass JSON string as expected by Chaincode
+        const dataJson = JSON.stringify(dto.transactionData);
+        return this.fabricService.submit('executeTransaction', dto.transactionType, dataJson, dto.evidenceHash);
     }
 
     @Post('subdivide')

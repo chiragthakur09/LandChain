@@ -79,6 +79,23 @@ export class FabricService implements OnModuleInit {
     }
 
     private getMockData(functionName: string, args: string[]) {
+        if (functionName === 'getPaymentDetails') {
+            const utr = args[0];
+            if (utr === 'UTR_VALID_MOCK') {
+                return {
+                    utr: utr,
+                    parcelId: 'PARCEL_MOCK_123',
+                    amount: 5000000,
+                    payerId: 'BUYER_MOCK',
+                    payeeId: 'SELLER_MOCK',
+                    timestamp: Date.now(),
+                    status: 'CONFIRMED',
+                    type: 'SALE_PRICE'
+                };
+            }
+            throw new Error(`Payment ${utr} not found`);
+        }
+
         if (functionName === 'getParcel') {
             const parcelId = args[0];
 

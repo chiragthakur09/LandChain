@@ -3,7 +3,7 @@ import { LandParcel } from '../assets/LandParcel';
 
 export class LifecycleManager {
 
-    public static async convertLandUse(ctx: Context, parcelId: string, newUse: 'AGRICULTURAL' | 'NON_AGRICULTURAL' | 'RESIDENTIAL' | 'COMMERCIAL'): Promise<LandParcel> {
+    public static async convertLandUse(ctx: Context, parcelId: string, newUse: 'AGRICULTURAL' | 'NON_AGRICULTURAL' | 'INDUSTRIAL' | 'FOREST' | 'RESERVED'): Promise<LandParcel> {
         // 1. Retrieve Parcel
         const parcelBytes = await ctx.stub.getState(parcelId);
         if (!parcelBytes || parcelBytes.length === 0) {

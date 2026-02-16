@@ -59,10 +59,13 @@ describe('Phase 12: Real World Nuances (Multi-Sig Explicit)', () => {
         parcel.disputes = [];
         parcel.charges = [];
 
-        mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
+        mockStub.getState.callsFake(async (key: string) => {
+            if (key === 'P1') return Buffer.from(JSON.stringify(parcel));
+            return Buffer.alloc(0);
+        });
 
         try {
-            await contract.transferParcel(ctx, 'P1', 'A', 'BUYER', 100, 1000000);
+            await contract.transferParcel(ctx, 'P1', 'A', 'BUYER', 100, 1000000, 'UTR_MS_FAIL');
             expect.fail('Should have blocked 100% sale');
         } catch (err: any) {
             expect(err.message).to.include('Seller only owns 50%');

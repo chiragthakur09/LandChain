@@ -3,10 +3,10 @@ import { LandParcel } from '../assets/LandParcel';
 import { TitleRecord, OwnerShare } from '../assets/TitleRecord';
 import { ChargeRecord } from '../assets/ChargeRecord';
 import { DisputeRecord } from '../assets/DisputeRecord';
-import { StrataUnit } from '../assets/StrataUnit'; // Import StrataUnit
+import { StrataUnit } from '../assets/StrataUnit';
+import { PaymentRecord } from '../assets/PaymentRecord';
 import { AssetRegistry } from '../logic/AssetRegistry';
 import { LifecycleManager } from '../logic/LifecycleManager';
-// import { EncumbranceLogic } from '../logic/EncumbranceLogic'; // Needs refactor affecting import
 
 @Info({ title: 'LandChainContract', description: 'Smart Contract for LandChain: The government-grade land registry' })
 export class LandChainContract extends Contract {
@@ -95,8 +95,17 @@ export class LandChainContract extends Contract {
     }
 
     @Transaction()
-    public async transferParcel(ctx: Context, parcelId: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number): Promise<void> {
+    public async transferParcel(ctx: Context, parcelId: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number, paymentUtr: string): Promise<void> {
         const parcel = await this.getParcel(ctx, parcelId);
+
+        // ... existing checks ...
+
+        // 0. Verify Payment UTR Uniqueness
+        const paymentKey = `PAY_${paymentUtr}`;
+        const existingPayment = await ctx.stub.getState(paymentKey);
+        if (existingPayment && existingPayment.length > 0) {
+            throw new Error(`Payment UTR ${paymentUtr} already used.`);
+        }
 
         // 1. Check RoD (Must be empty or resolved)
         const activeDisputes = parcel.disputes.filter(d => d.status === 'PENDING');
@@ -113,7 +122,6 @@ export class LandChainContract extends Contract {
         }
 
         // 3. Verify Seller Ownership & Share
-        // In real world, we verify msg.sender == sellerId
         const sellerIndex = parcel.title.owners.findIndex(o => o.ownerId === sellerId);
         if (sellerIndex === -1) {
             throw new Error(`Seller ${sellerId} is not an owner of this parcel`);
@@ -125,11 +133,6 @@ export class LandChainContract extends Contract {
         }
 
         // 4. Joint Holding Check (Mock Multi-Sig)
-        // If selling 100% of the property (sharePercentage == 100), but there are multiple owners, 
-        // we require signatures from ALL owners. 
-        // Since we are mocking signatures, we simply BLOCK this action if the seller is not the sole owner.
-        // The seller must first acquire 100% share or the buyers must buy shares individually from each owner.
-
         if (sharePercentage === 100 && parcel.title.owners.length > 1) {
             throw new Error(`Multi-Sig Required: Cannot sell 100% of a Jointly Held property. Sell your share (${sellerRecord.sharePercentage}%) instead.`);
         }
@@ -154,10 +157,30 @@ export class LandChainContract extends Contract {
         parcel.title.publicationDate = Date.now();
         parcel.title.isConclusive = false;
 
-        // 7. Update Metadata
-        // parcel.lastTransferredAt = Date.now(); // If we re-add this field
+        // 7. Record Payment
+        const payment: PaymentRecord = {
+            utr: paymentUtr,
+            parcelId: parcelId,
+            amount: salePrice,
+            payerId: buyerId,
+            payeeId: sellerId,
+            timestamp: Date.now(),
+            status: 'CONFIRMED',
+            type: 'SALE_PRICE'
+        };
+        await ctx.stub.putState(`PAY_${paymentUtr}`, Buffer.from(JSON.stringify(payment)));
 
         await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+    }
+
+    @Transaction(false)
+    public async getPaymentDetails(ctx: Context, utr: string): Promise<PaymentRecord> {
+        const paymentKey = `PAY_${utr}`;
+        const paymentBytes = await ctx.stub.getState(paymentKey);
+        if (!paymentBytes || paymentBytes.length === 0) {
+            throw new Error(`Payment with UTR ${utr} not found`);
+        }
+        return JSON.parse(paymentBytes.toString());
     }
 
     @Transaction()
@@ -175,7 +198,6 @@ export class LandChainContract extends Contract {
 
         // 1. Resolve it
         dispute.status = 'RESOLVED';
-        // In real app, store 'resolution' text or doc hash
 
         // 2. Check if we can unlock the parcel
         const remainingDisputes = parcel.disputes.filter(d => d.status === 'PENDING');
@@ -186,7 +208,6 @@ export class LandChainContract extends Contract {
         } else if (activeBlockingCharges.length > 0) {
             parcel.status = 'LOCKED'; // Still locked by charge
         }
-        // If other disputes remain, status stays LITIGATION (implicit)
 
         await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
     }
@@ -241,7 +262,8 @@ export class LandChainContract extends Contract {
 
     @Transaction()
     public async convertLandUse(ctx: Context, parcelId: string, newUse: string): Promise<LandParcel> {
-        if (!['AGRICULTURAL', 'NON_AGRICULTURAL', 'RESIDENTIAL', 'COMMERCIAL'].includes(newUse)) {
+        const validUses = ['AGRICULTURAL', 'NON_AGRICULTURAL', 'INDUSTRIAL', 'FOREST', 'RESERVED'];
+        if (!validUses.includes(newUse)) {
             throw new Error('Invalid Land Use Type');
         }
         return await LifecycleManager.convertLandUse(ctx, parcelId, newUse as any);
@@ -250,12 +272,6 @@ export class LandChainContract extends Contract {
     @Transaction()
     public async finalizeTitle(ctx: Context, parcelId: string): Promise<void> {
         const parcel = await this.getParcel(ctx, parcelId);
-
-        // 1. Check Publication Date (3 Years Logic - Mocked to 3 minutes for POC)
-        // const ONE_MINUTE = 60 * 1000;
-        // if (Date.now() < parcel.title.publicationDate + (3 * ONE_MINUTE)) { 
-        // throw new Error('Title is still in Provisional State'); 
-        // }
 
         // 2. Check RoD (Must be empty)
         if (parcel.disputes.some(d => d.status === 'PENDING')) {
@@ -275,5 +291,93 @@ export class LandChainContract extends Contract {
     public async parcelExists(ctx: Context, parcelId: string): Promise<boolean> {
         const parcelJSON = await ctx.stub.getState(parcelId);
         return parcelJSON && parcelJSON.length > 0;
+    }
+    // ============================================================
+    // Phase 16: Dynamic State Machine (Pluggable Architecture)
+    // ============================================================
+
+    @Transaction()
+    public async executeTransaction(ctx: Context, transactionType: string, transactionDataJson: string, evidenceHash: string): Promise<void> {
+        const transactionData = JSON.parse(transactionDataJson);
+        const { parcelId } = transactionData;
+
+        // 1. Fetch Asset (LandParcel or StrataUnit)
+        // For simplicity, assuming LandParcel for now. dynamic loading for StrataUnit to be added.
+        const parcelBytes = await ctx.stub.getState(parcelId);
+        if (!parcelBytes || parcelBytes.length === 0) {
+            throw new Error(`Asset ${parcelId} not found`);
+        }
+        const parcel: LandParcel = JSON.parse(parcelBytes.toString());
+
+        // 2. Global Validation (State Machine)
+        if (parcel.status !== 'FREE') {
+            // Allow some transactions on Locked assets? (e.g. Unlock)
+            if (transactionType !== 'RESOLVE_DISPUTE' && transactionType !== 'UNLOCK_CHARGE') {
+                throw new Error(`Asset is ${parcel.status}. Cannot execute ${transactionType}.`);
+            }
+        }
+
+        // 3. Delegate to Transaction Logic (The "Plug")
+        switch (transactionType) {
+            case 'SALE':
+                await this.processSale(ctx, parcel, transactionData);
+                break;
+            case 'PARTITION':
+                await this.processPartition(ctx, parcel, transactionData);
+                break;
+            case 'INHERITANCE':
+                await this.processInheritance(ctx, parcel, transactionData);
+                break;
+            case 'CONVERSION':
+                await this.processConversion(ctx, parcel, transactionData);
+                break;
+            default:
+                throw new Error(`Unknown Transaction Type: ${transactionType}`);
+        }
+
+        // 4. Update State (Partition handles its own puts)
+        if (transactionType !== 'PARTITION') {
+            await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+        }
+
+        // 5. Emit Event
+        ctx.stub.setEvent('TransactionExecuted', Buffer.from(JSON.stringify({ type: transactionType, parcelId, timestamp: Date.now() })));
+    }
+
+    private async processSale(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { sellerId, buyerId, price, share }
+        parcel.title.owners = [{ ownerId: data.buyerId, sharePercentage: 100 }];
+        parcel.title.isConclusive = false;
+        parcel.title.publicationDate = Date.now();
+    }
+
+    private async processPartition(ctx: Context, parentParcel: LandParcel, data: any) {
+        // data: { subParcels: [{ id, area, owner, surveySuffix }] }
+        parentParcel.status = 'RETIRED';
+        await ctx.stub.putState(parentParcel.parcelId, Buffer.from(JSON.stringify(parentParcel)));
+
+        for (const child of data.subParcels) {
+            const newParcel = new LandParcel();
+            Object.assign(newParcel, parentParcel);
+            newParcel.parcelId = child.id;
+            newParcel.subDivision = parentParcel.subDivision + '/' + child.surveySuffix;
+            newParcel.area = child.area;
+            newParcel.status = 'FREE';
+            newParcel.title = { ...parentParcel.title, owners: [{ ownerId: child.owner, sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() };
+
+            await ctx.stub.putState(newParcel.parcelId, Buffer.from(JSON.stringify(newParcel)));
+        }
+    }
+
+    private async processInheritance(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { heirs: [{ id, share }] }
+        parcel.title.owners = data.heirs.map((h: any) => ({ ownerId: h.id, sharePercentage: h.share }));
+        parcel.title.isConclusive = false;
+        parcel.title.publicationDate = Date.now();
+    }
+
+    private async processConversion(ctx: Context, parcel: LandParcel, data: any) {
+        // data: { newUse: string }
+        parcel.landUseType = data.newUse;
     }
 }
