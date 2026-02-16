@@ -1,7 +1,18 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class IdentityService {
+    constructor(private jwtService: JwtService) { }
+
+    // Mock UIDAI Database
+    // In real world, this calls UIDAI API
+    private validUsers = [
+        { aadhaar: '999999990001', name: 'Ramesh Gupta', role: 'CITIZEN' },
+        { aadhaar: '999999990002', name: 'Suresh Patil', role: 'CITIZEN' },
+        { aadhaar: '111122223333', name: 'District Collector', role: 'ADMIN' } // DC
+    ];
+
     private otpStore: Map<string, string> = new Map(); // Store OTPs in memory
 
     verifyAadhaar(aadhaarNo: string): boolean {

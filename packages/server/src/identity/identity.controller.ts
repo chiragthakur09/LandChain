@@ -1,12 +1,19 @@
+```typescript
 import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { IdentityService } from './identity.service';
 import { VerifyAadhaarDto, SendOtpDto, VerifyOtpDto } from './identity.dto';
 
-@ApiTags('Identity (Aadhaar)')
+@ApiTags('Identity')
 @Controller('identity')
 export class IdentityController {
     constructor(private readonly identityService: IdentityService) { }
+
+    @Post('login')
+    @ApiOperation({ summary: 'Login via Aadhaar + Mock OTP (123456)' })
+    async login(@Body() body: { aadhaar: string; otp: string }) {
+        return this.identityService.login(body.aadhaar, body.otp);
+    }
 
     @ApiOperation({ summary: 'Verify Aadhaar Existence' })
     @Post('verify-aadhaar')
