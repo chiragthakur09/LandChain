@@ -7,7 +7,7 @@ import { ChargeRecord } from './ChargeRecord';
 @Object()
 export class LandParcel {
     @Property()
-    public parcelId: string = ''; // Internal UUID
+    public ulpin: string = ''; // 14-digit Bhu-Aadhar (Primary Key)
 
     @Property()
     public surveyNo: string = ''; // e.g., "102"
@@ -35,8 +35,7 @@ export class LandParcel {
     public tenureType: 'OCCUPANCY_CLASS_1' | 'OCCUPANCY_CLASS_2' | 'LEASEHOLD' = 'OCCUPANCY_CLASS_1';
 
     // Phase 26: Advanced Schema
-    @Property()
-    public ulpinPNIU: string = ''; // 14-digit Bhu-Aadhar based on coordinates (Linked to geoJson)
+
 
     @Property()
     public isTribalProtected: boolean = false; // CNT/SPT Act

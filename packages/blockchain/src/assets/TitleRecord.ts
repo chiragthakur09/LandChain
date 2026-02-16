@@ -29,7 +29,7 @@ export class TitleRecord {
     @Property()
     public titleId: string = '';
     @Property()
-    public parcelId: string = '';
+    public ulpin: string = ''; // Foreign Key to LandParcel
     @Property()
     public owners: OwnerShare[] = [];
     @Property()

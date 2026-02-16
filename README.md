@@ -22,31 +22,38 @@ LandChain is a "Government-Grade" land registry system built on **Hyperledger Fa
 npm install
 ```
 
-### Running the Vibe (Local Simulation)
+### Running the Full Stack (Docker) - Recommended
+The easiest way to run the entire system (Blockchain + API + UI) is via Docker Compose.
 
-Since this is a "Vibe Code" POC, we run the components in simulation mode without a heavy Docker network.
+```bash
+docker-compose up --build
+```
+*   **Frontend**: `http://localhost:3001`
+*   **Backend**: `http://localhost:3000`
+*   **Fabric**: `localhost:7051`
 
-**1. Start the Backend (Mock Validator Node)**
+### Running Locally (Dev Mode)
+If you want to run components individually for debugging:
+
+**1. Start the Backend (Mock Mode)**
 ```bash
 cd packages/server
-npm run start
+# Set USE_MOCK_FABRIC=true to bypass Docker requirement
+USE_MOCK_FABRIC=true npm run start
 ```
-*Runs on `http://127.0.0.1:3001`*
 
-**2. Start the Frontend (Citizen Portal)**
+**2. Start the Frontend**
 ```bash
-cd packages/client
-npm run dev
+cd packages/client && npm run dev
 ```
-*Open `http://localhost:3000`*
 
 ## 🧪 Key Scenarios to Test
 
 | ID | Scenario | Input ID | Expected Result |
 | :--- | :--- | :--- | :--- |
-| **1** | **Clean Title (RoT)** | `PARCEL_001` | ✅ **GREEN**: Conclusive Title Verified |
-| **2** | **Tax Default (RoCC)** | `PARCEL_LOCKED` | ❌ **RED**: Blocked by Tax Default (Charge) |
-| **3** | **Strata Unit** | `APT_101` | ✅ **GREEN**: Vertical Property Title Verified |
+| **1** | **Clean Title (RoT)** | `MH12PUNE010001` | ✅ **GREEN**: Conclusive Title Verified |
+| **2** | **Tax Default (RoCC)** | `MH12LOCK000001` | ❌ **RED**: Blocked by Tax Default (Charge) |
+| **3** | **Strata Unit** | `MH12APT00101` | ✅ **GREEN**: Vertical Property Title Verified |
 
 ## 📂 Project Structure
 

@@ -6,8 +6,7 @@ export class DisputeRecord {
     public disputeId: string = '';
 
     @Property()
-    public parcelId: string = '';
-
+    public ulpin: string = ''; // Foreign Key
     @Property()
     public courtId: string = ''; // The court where suit is filed
 

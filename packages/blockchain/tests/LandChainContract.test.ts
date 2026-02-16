@@ -28,7 +28,7 @@ describe('LandChainContract', () => {
 
             const parcel = await contract.createParcel(ctx, 'PARCEL_TEST_001', 'OWNER_001', 'POLYGON((0 0))', 'DOC_HASH_001');
 
-            expect(parcel.parcelId).to.equal('PARCEL_TEST_001');
+            expect(parcel.ulpin).to.equal('PARCEL_TEST_001');
             expect(parcel.status).to.equal('FREE');
             expect(parcel.title.titleId).to.equal('TITLE_PARCEL_TEST_001');
             expect(parcel.title.owners[0].ownerId).to.equal('OWNER_001');
@@ -37,7 +37,7 @@ describe('LandChainContract', () => {
         });
 
         it('should throw error if parcel already exists', async () => {
-            mockStub.getState.resolves(Buffer.from('{"parcelId": "PARCEL_TEST_001"}'));
+            mockStub.getState.resolves(Buffer.from('{"ulpin": "PARCEL_TEST_001"}'));
 
             try {
                 await contract.createParcel(ctx, 'PARCEL_TEST_001', 'OWNER_001', 'POLYGON((0 0))', 'DOC_HASH_001');
@@ -51,7 +51,7 @@ describe('LandChainContract', () => {
     describe('recordIntimation', () => {
         it('should record a MORTGAGE charge and lock the parcel', async () => {
             const existingParcel = new LandParcel();
-            existingParcel.parcelId = 'PARCEL_TEST_001';
+            existingParcel.ulpin = 'PARCEL_TEST_001';
             existingParcel.status = 'FREE';
             existingParcel.charges = [];
             existingParcel.disputes = [];
@@ -72,7 +72,7 @@ describe('LandChainContract', () => {
 
         it('should record a DISPUTE and set status to LITIGATION', async () => {
             const existingParcel = new LandParcel();
-            existingParcel.parcelId = 'PARCEL_TEST_001';
+            existingParcel.ulpin = 'PARCEL_TEST_001';
             existingParcel.status = 'FREE';
             existingParcel.charges = [];
             existingParcel.disputes = [];
@@ -94,9 +94,9 @@ describe('LandChainContract', () => {
     describe('transferParcel', () => {
         it('should transfer parcel if no bad records exist', async () => {
             const existingParcel = new LandParcel();
-            existingParcel.parcelId = 'PARCEL_TEST_001';
+            existingParcel.ulpin = 'PARCEL_TEST_001';
             existingParcel.status = 'FREE';
-            existingParcel.title = { titleId: 'T1', parcelId: 'PARCEL_TEST_001', owners: [{ ownerId: 'OLD_OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() };
+            existingParcel.title = { titleId: 'T1', ulpin: 'PARCEL_TEST_001', owners: [{ ownerId: 'OLD_OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() };
             existingParcel.charges = [];
             existingParcel.disputes = [];
 
@@ -117,10 +117,10 @@ describe('LandChainContract', () => {
 
         it('should fail transfer if active Mortgage exists', async () => {
             const existingParcel = new LandParcel();
-            existingParcel.parcelId = 'PARCEL_TEST_001';
+            existingParcel.ulpin = 'PARCEL_TEST_001';
             existingParcel.status = 'LOCKED';
-            existingParcel.title = { titleId: 'T1', parcelId: 'PARCEL_TEST_001', owners: [{ ownerId: 'OLD_OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() };
-            existingParcel.charges = [{ chargeId: 'C1', parcelId: 'PARCEL_TEST_001', type: 'MORTGAGE', holder: 'BANK', amount: 100, active: true, timestamp: Date.now() }];
+            existingParcel.title = { titleId: 'T1', ulpin: 'PARCEL_TEST_001', owners: [{ ownerId: 'OLD_OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() };
+            existingParcel.charges = [{ chargeId: 'C1', ulpin: 'PARCEL_TEST_001', type: 'MORTGAGE', holder: 'BANK', amount: 100, active: true, timestamp: Date.now() }];
             existingParcel.disputes = [];
 
             mockStub.getState.callsFake(async (key: string) => {
@@ -140,8 +140,8 @@ describe('LandChainContract', () => {
     describe('finalizeTitle', () => {
         it('should finalize title if no disputes', async () => {
             const existingParcel = new LandParcel();
-            existingParcel.parcelId = 'PARCEL_TEST_001';
-            existingParcel.title = { titleId: 'T1', parcelId: 'PARCEL_TEST_001', owners: [{ ownerId: 'OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() - (1000 * 60 * 60 * 24 * 365 * 4) }; // 4 years ago
+            existingParcel.ulpin = 'PARCEL_TEST_001';
+            existingParcel.title = { titleId: 'T1', ulpin: 'PARCEL_TEST_001', owners: [{ ownerId: 'OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() - (1000 * 60 * 60 * 24 * 365 * 4) }; // 4 years ago
             existingParcel.charges = [];
             existingParcel.disputes = [];
 
@@ -158,10 +158,10 @@ describe('LandChainContract', () => {
 
         it('should fail to finalize if disputes exist', async () => {
             const existingParcel = new LandParcel();
-            existingParcel.parcelId = 'PARCEL_TEST_001';
-            existingParcel.title = { titleId: 'T1', parcelId: 'PARCEL_TEST_001', owners: [{ ownerId: 'OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() - (1000 * 60 * 60 * 24 * 365 * 4) };
+            existingParcel.ulpin = 'PARCEL_TEST_001';
+            existingParcel.title = { titleId: 'T1', ulpin: 'PARCEL_TEST_001', owners: [{ ownerId: 'OWNER', sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() - (1000 * 60 * 60 * 24 * 365 * 4) };
             existingParcel.charges = [];
-            existingParcel.disputes = [{ disputeId: 'D1', parcelId: 'PARCEL_TEST_001', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: Date.now() }];
+            existingParcel.disputes = [{ disputeId: 'D1', ulpin: 'PARCEL_TEST_001', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: Date.now() }];
 
             mockStub.getState.resolves(Buffer.from(JSON.stringify(existingParcel)));
 

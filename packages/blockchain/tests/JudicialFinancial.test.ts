@@ -27,7 +27,7 @@ describe('Judicial & Financial Locks', () => {
 
     const createMockParcel = (id: string, owner: string): LandParcel => {
         return {
-            parcelId: id,
+            ulpin: id,
             surveyNo: '100',
             subDivision: '0',
             landUseType: 'NON_AGRICULTURAL',
@@ -36,7 +36,7 @@ describe('Judicial & Financial Locks', () => {
             status: 'FREE',
             title: {
                 titleId: `TITLE_${id}`,
-                parcelId: id,
+                ulpin: id,
                 owners: [{ ownerId: owner, sharePercentage: 100 }],
                 isConclusive: true,
                 publicationDate: Date.now()
@@ -75,7 +75,7 @@ describe('Judicial & Financial Locks', () => {
         p1.status = 'LOCKED';
         p1.charges = [{
             chargeId: 'CHG_1',
-            parcelId: 'P1',
+            ulpin: 'P1',
             type: 'MORTGAGE',
             holder: 'SBI_BANK',
             amount: 1000,
@@ -85,7 +85,7 @@ describe('Judicial & Financial Locks', () => {
         mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
 
         // Unlock
-        await contract.executeTransaction(ctx, 'UNLOCK_CHARGE', JSON.stringify({ parcelId: 'P1', chargeId: 'CHG_1' }), '');
+        await contract.executeTransaction(ctx, 'UNLOCK_CHARGE', JSON.stringify({ ulpin: 'P1', chargeId: 'CHG_1' }), '');
 
         const putCall = mockStub.putState.withArgs('P1').firstCall;
         const updated = JSON.parse(putCall.args[1].toString());
@@ -99,7 +99,7 @@ describe('Judicial & Financial Locks', () => {
         // Has Mortgage AND Dispute
         p1.charges = [{
             chargeId: 'CHG_1',
-            parcelId: 'P1',
+            ulpin: 'P1',
             type: 'MORTGAGE',
             holder: 'SBI_BANK',
             amount: 1000,
@@ -107,7 +107,7 @@ describe('Judicial & Financial Locks', () => {
         } as ChargeRecord];
         p1.disputes = [{
             disputeId: 'DSP_1',
-            parcelId: 'P1',
+            ulpin: 'P1',
             courtId: 'CIVIL_COURT',
             type: 'TITLE_SUIT',
             status: 'PENDING'
@@ -116,7 +116,7 @@ describe('Judicial & Financial Locks', () => {
         mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
 
         // Unlock Mortgage
-        await contract.executeTransaction(ctx, 'UNLOCK_CHARGE', JSON.stringify({ parcelId: 'P1', chargeId: 'CHG_1' }), '');
+        await contract.executeTransaction(ctx, 'UNLOCK_CHARGE', JSON.stringify({ ulpin: 'P1', chargeId: 'CHG_1' }), '');
 
         const putCall = mockStub.putState.withArgs('P1').firstCall;
         const updated = JSON.parse(putCall.args[1].toString());

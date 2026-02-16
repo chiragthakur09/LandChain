@@ -25,11 +25,11 @@ describe('Phase 34: Comprehensive Transaction Metadata', () => {
     describe('transferParcel with Metadata', () => {
         it('should store Stamp Duty and Witness details in TitleRecord', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'MH12META000001';
+            parcel.ulpin = 'MH12META000001';
             parcel.status = 'FREE';
             parcel.title = {
                 titleId: 'TITLE_001',
-                parcelId: 'MH12META000001',
+                ulpin: 'MH12META000001',
                 owners: [{ ownerId: 'SELLER', sharePercentage: 100 }],
                 isConclusive: true,
                 publicationDate: 0
@@ -79,7 +79,7 @@ describe('Phase 34: Comprehensive Transaction Metadata', () => {
 
         it('should validate Stamp Duty Amount', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'MH12META000002';
+            parcel.ulpin = 'MH12META000002';
             parcel.status = 'FREE';
             parcel.title = { owners: [{ ownerId: 'SELLER', sharePercentage: 100 }] } as any;
             parcel.disputes = [];

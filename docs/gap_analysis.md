@@ -55,7 +55,7 @@ The transition from a presumptive to a conclusive titling system in India repres
 ### LandParcel.ts (Proposed)
 ```typescript
 interface LandParcel {
-  parcelId: string; // ULPIN (14-digit)
+  ulpin: string; // ULPIN (14-digit)
   
   // Classification
   landCategory: 'Nazul' | 'Gair_Mazarua_Aam' | 'Tribal_Scheduled' | 'General';

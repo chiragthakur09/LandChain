@@ -1,0 +1,46 @@
+services:
+  # ---------------------------------------------------------
+  # 1. Hyperledger Fabric Network (Mock for Dev)
+  # ---------------------------------------------------------
+  fabric-network:
+    image: hyperledger/fabric-peer:latest
+    container_name: landchain-fabric
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+    ports:
+      - "7051:7051"
+    command: peer node start
+
+  # ---------------------------------------------------------
+  # 2. NestJS Backend API
+  # ---------------------------------------------------------
+  landchain-server:
+    build:
+      context: ./packages/server
+      dockerfile: Dockerfile
+    container_name: landchain-server
+    ports:
+      - "3000:3000"
+    environment:
+      - FABRIC_CONNECTION_PROFILE_PATH=/usr/src/app/connection.json
+      - FABRIC_DISCOVERY_ENABLED=true
+      - FABRIC_AS_LOCALHOST=false
+    depends_on:
+      - fabric-network
+    volumes:
+      - ./packages/network/connection.json:/usr/src/app/connection.json
+
+  # ---------------------------------------------------------
+  # 3. Next.js Client Frontend
+  # ---------------------------------------------------------
+  landchain-client:
+    build:
+      context: ./packages/client
+      dockerfile: Dockerfile
+    container_name: landchain-client
+    ports:
+      - "3001:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      - landchain-server

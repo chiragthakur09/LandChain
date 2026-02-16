@@ -26,7 +26,7 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
 
     const createMockParcel = (id: string, owner: string, status: 'FREE' | 'LOCKED' = 'FREE', area: number = 10): LandParcel => {
         return {
-            parcelId: id,
+            ulpin: id,
             surveyNo: '100',
             subDivision: '0',
             landUseType: 'NON_AGRICULTURAL',
@@ -35,7 +35,7 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
             status: status,
             title: {
                 titleId: `TITLE_${id}`,
-                parcelId: id,
+                ulpin: id,
                 owners: [{ ownerId: owner, sharePercentage: 100 }],
                 isConclusive: true,
                 publicationDate: Date.now()
@@ -63,8 +63,8 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
         mockStub.getState.withArgs('P2').resolves(Buffer.from(JSON.stringify(p2)));
 
         const txData = {
-            constituentParcelIds: ['P1', 'P2'],
-            newParcelId: 'P_MERGED',
+            constituentUlpins: ['P1', 'P2'],
+            newUlpin: 'P_MERGED',
             newGeoJson: 'MERGED_POLY'
         };
 
@@ -93,7 +93,7 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
         mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
         mockStub.getState.withArgs('P2').resolves(Buffer.from(JSON.stringify(p2)));
 
-        const txData = { constituentParcelIds: ['P1', 'P2'], newParcelId: 'P_X', newGeoJson: '' };
+        const txData = { constituentUlpins: ['P1', 'P2'], newUlpin: 'P_X', newGeoJson: '' };
 
         try {
             await contract.executeTransaction(ctx, 'AMALGAMATE_PARCELS', JSON.stringify(txData), '');
@@ -110,7 +110,7 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
         mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
         mockStub.getState.withArgs('P2').resolves(Buffer.from(JSON.stringify(p2)));
 
-        const txData = { constituentParcelIds: ['P1', 'P2'], newParcelId: 'P_X', newGeoJson: '' };
+        const txData = { constituentUlpins: ['P1', 'P2'], newUlpin: 'P_X', newGeoJson: '' };
 
         try {
             await contract.executeTransaction(ctx, 'AMALGAMATE_PARCELS', JSON.stringify(txData), '');
@@ -124,7 +124,7 @@ describe('Urban & Commercial Workflows (Amalgamation)', () => {
         const p1 = createMockParcel('P1', 'DEV_1');
         mockStub.getState.withArgs('P1').resolves(Buffer.from(JSON.stringify(p1)));
 
-        const txData = { parcelId: 'P1', newGeoJson: 'CORRECTED_POLY', surveyRef: 'SUR_123' };
+        const txData = { ulpin: 'P1', newGeoJson: 'CORRECTED_POLY', surveyRef: 'SUR_123' };
 
         await contract.executeTransaction(ctx, 'RECTIFY_BOUNDARY', JSON.stringify(txData), '');
 

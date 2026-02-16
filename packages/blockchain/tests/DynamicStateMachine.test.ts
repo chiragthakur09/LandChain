@@ -22,7 +22,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
 
     const createMockParcel = (id: string, status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED' = 'FREE'): LandParcel => {
         return {
-            parcelId: id,
+            ulpin: id,
             surveyNo: '100',
             subDivision: '0',
             landUseType: 'AGRICULTURAL',
@@ -31,7 +31,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
             status: status,
             title: {
                 titleId: `TITLE_${id}`,
-                parcelId: id,
+                ulpin: id,
                 owners: [{ ownerId: 'OWNER_A', sharePercentage: 100 }],
                 isConclusive: true,
                 publicationDate: Date.now()
@@ -47,7 +47,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
         mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         const txData = {
-            parcelId: 'PARCEL_100',
+            ulpin: 'PARCEL_100',
             sellerId: 'OWNER_A',
             buyerId: 'OWNER_B',
             price: 5000000,
@@ -71,7 +71,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
         mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         const txData = {
-            parcelId: 'PARCEL_100',
+            ulpin: 'PARCEL_100',
             heirs: [
                 { id: 'HEIR_1', share: 50 },
                 { id: 'HEIR_2', share: 50 }
@@ -94,7 +94,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
         mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         const txData = {
-            parcelId: 'PARCEL_100',
+            ulpin: 'PARCEL_100',
             subParcels: [
                 { id: 'PARCEL_100_1', area: 5, owner: 'OWNER_A', surveySuffix: '1' },
                 { id: 'PARCEL_100_2', area: 5, owner: 'OWNER_A', surveySuffix: '2' }
@@ -124,7 +124,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
         mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         const txData = {
-            parcelId: 'PARCEL_100',
+            ulpin: 'PARCEL_100',
             newUse: 'NON_AGRICULTURAL'
         };
 
@@ -140,7 +140,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
         const parcel = createMockParcel('PARCEL_LOCKED', 'LOCKED');
         mockStub.getState.withArgs('PARCEL_LOCKED').resolves(Buffer.from(JSON.stringify(parcel)));
 
-        const txData = { parcelId: 'PARCEL_LOCKED' };
+        const txData = { ulpin: 'PARCEL_LOCKED' };
 
         try {
             await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), 'HASH');
@@ -155,7 +155,7 @@ describe('Dynamic State Machine (Schema 2.0)', () => {
         mockStub.getState.withArgs('PARCEL_100').resolves(Buffer.from(JSON.stringify(parcel)));
 
         try {
-            await contract.executeTransaction(ctx, 'UNKNOWN_TYPE', JSON.stringify({ parcelId: 'PARCEL_100' }), 'HASH');
+            await contract.executeTransaction(ctx, 'UNKNOWN_TYPE', JSON.stringify({ ulpin: 'PARCEL_100' }), 'HASH');
             expect.fail('Should have thrown error');
         } catch (err: any) {
             expect(err.message).to.include('Unknown Transaction Type');

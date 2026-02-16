@@ -3,11 +3,11 @@ import { LandParcel } from '../assets/LandParcel';
 
 export class LifecycleManager {
 
-    public static async convertLandUse(ctx: Context, parcelId: string, newUse: 'AGRICULTURAL' | 'NON_AGRICULTURAL' | 'INDUSTRIAL' | 'FOREST' | 'RESERVED'): Promise<LandParcel> {
+    public static async convertLandUse(ctx: Context, ulpin: string, newUse: 'AGRICULTURAL' | 'NON_AGRICULTURAL' | 'INDUSTRIAL' | 'FOREST' | 'RESERVED'): Promise<LandParcel> {
         // 1. Retrieve Parcel
-        const parcelBytes = await ctx.stub.getState(parcelId);
+        const parcelBytes = await ctx.stub.getState(ulpin);
         if (!parcelBytes || parcelBytes.length === 0) {
-            throw new Error(`Parcel ${parcelId} not found`);
+            throw new Error(`Parcel ${ulpin} not found`);
         }
         const parcel: LandParcel = JSON.parse(parcelBytes.toString());
 
@@ -20,10 +20,10 @@ export class LifecycleManager {
         parcel.landUseType = newUse;
 
         // 4. Save State
-        await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+        await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(parcel)));
 
         // 5. Emit Event
-        ctx.stub.setEvent('ConversionEvent', Buffer.from(JSON.stringify({ parcelId, oldUse, newUse })));
+        ctx.stub.setEvent('ConversionEvent', Buffer.from(JSON.stringify({ ulpin, oldUse, newUse })));
 
         return parcel;
     }

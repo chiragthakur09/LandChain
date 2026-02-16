@@ -19,7 +19,7 @@ describe('Real World Nuances (Multi-Sig Explicit)', () => {
 
     it('should block 100% sale if multiple owners exist (true Multi-Sig constraint)', async () => {
         const parcel = new LandParcel();
-        parcel.parcelId = 'P1';
+        parcel.ulpin = 'P1';
         // Case where A owns 100% but somehow B is also an owner? That's invalid state.
         // Real Multi-Sig case: A owns 50%, B owns 50%. A tries to sell 100%? Caught by insufficient share.
         // The ONLY way Multi-Sig logic triggers is if A owns 100%... wait.
@@ -52,7 +52,7 @@ describe('Real World Nuances (Multi-Sig Explicit)', () => {
         // Let's create a test that verifies Check #3 behaves AS the "Joint Holding Protection".
 
         parcel.title = {
-            titleId: 'T1', parcelId: 'P1',
+            titleId: 'T1', ulpin: 'P1',
             owners: [{ ownerId: 'A', sharePercentage: 50 }, { ownerId: 'B', sharePercentage: 50 }],
             isConclusive: true, publicationDate: Date.now()
         };

@@ -90,7 +90,7 @@ export default function PublicPayment() {
                             </div>
                             <div className="flex justify-between border-t border-slate-200 dark:border-slate-700 pt-2 mt-2">
                                 <span className="text-muted-foreground text-slate-500">Parcel:</span>
-                                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{paymentData.parcelId}</span>
+                                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">{paymentData.ulpin}</span>
                             </div>
                         </div>
                     </div>

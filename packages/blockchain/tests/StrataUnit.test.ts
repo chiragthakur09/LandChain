@@ -22,7 +22,7 @@ describe('LandChainContract: Strata Titling', () => {
         it('should create a Strata Unit if parent is FREE', async () => {
             // Mock Parent Parcel
             const parentParcel = new LandParcel();
-            parentParcel.parcelId = 'MH12PARENT0001_001';
+            parentParcel.ulpin = 'MH12PARENT0001_001';
             parentParcel.status = 'FREE';
 
             mockStub.getState.withArgs('MH12PARENT0001_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
@@ -31,7 +31,7 @@ describe('LandChainContract: Strata Titling', () => {
             const unit = await contract.createStrataUnit(ctx, 'APT_101', 'MH12PARENT0001_001', 1, 1200, 'OWNER_APT_1');
 
             expect(unit.unitId).to.equal('APT_101');
-            expect(unit.parentParcelId).to.equal('MH12PARENT0001_001');
+            expect(unit.parentUlpin).to.equal('MH12PARENT0001_001');
             expect(unit.floor).to.equal(1);
             expect(unit.title.owners[0].ownerId).to.equal('OWNER_APT_1');
 
@@ -40,7 +40,7 @@ describe('LandChainContract: Strata Titling', () => {
 
         it('should fail if parent is LOCKED', async () => {
             const parentParcel = new LandParcel();
-            parentParcel.parcelId = 'MH12PARENT0001_001';
+            parentParcel.ulpin = 'MH12PARENT0001_001';
             parentParcel.status = 'LOCKED'; // e.g. Tax Default
 
             mockStub.getState.withArgs('MH12PARENT0001_001').resolves(Buffer.from(JSON.stringify(parentParcel)));
@@ -59,7 +59,7 @@ describe('LandChainContract: Strata Titling', () => {
             // Mock Strata Unit
             const unit = new StrataUnit();
             unit.unitId = 'UNIT_505';
-            unit.parentParcelId = 'PARCEL_A';
+            unit.parentUlpin = 'PARCEL_A';
             unit.status = 'FREE';
             unit.title = { owners: [{ ownerId: 'BUILDER', sharePercentage: 100 }] } as any;
             unit.ocDocumentHash = 'QmValidOCHash12345678901234567890123456789012'; // Added for Phase 29 RERA
@@ -68,7 +68,7 @@ describe('LandChainContract: Strata Titling', () => {
             mockStub.getState.withArgs('PARCEL_A').resolves(Buffer.from(JSON.stringify({ status: 'FREE' })));
             mockStub.getState.withArgs('UNIT_505').resolves(Buffer.from(JSON.stringify(unit)));
 
-            await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ parcelId: 'UNIT_505', buyerId: 'BUYER_1' }), '');
+            await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'UNIT_505', buyerId: 'BUYER_1' }), '');
 
             // Verify Owner Update
             const putArgs = mockStub.putState.args[0];
@@ -85,7 +85,7 @@ describe('LandChainContract: Strata Titling', () => {
             mockStub.getState.withArgs('APT_LOCKED').resolves(Buffer.from(JSON.stringify(unit)));
 
             try {
-                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ parcelId: 'APT_LOCKED' }), 'HASH');
+                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'APT_LOCKED' }), 'HASH');
                 expect.fail('Should fail');
             } catch (err: any) {
                 expect(err.message).to.include('Asset is LOCKED');

@@ -25,14 +25,14 @@ describe('Phase 33: NITI Aayog Refinements', () => {
     describe('Inheritance Share Validation', () => {
         it('should FAIL if heirs shares do not sum to 100%', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'PARCEL_LEGACY';
+            parcel.ulpin = 'PARCEL_LEGACY';
             parcel.status = 'LOCKED_FOR_SUCCESSION';
             parcel.title = { owners: [{ ownerId: 'DECEASED', sharePercentage: 100 }] } as any;
 
             mockStub.getState.withArgs('PARCEL_LEGACY').resolves(Buffer.from(JSON.stringify(parcel)));
 
             const txData = {
-                parcelId: 'PARCEL_LEGACY',
+                ulpin: 'PARCEL_LEGACY',
                 heirs: [
                     { id: 'HEIR_1', share: 50 },
                     { id: 'HEIR_2', share: 40 } // Sum = 90
@@ -49,14 +49,14 @@ describe('Phase 33: NITI Aayog Refinements', () => {
 
         it('should PASS if heirs shares sum to 100%', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'PARCEL_LEGACY';
+            parcel.ulpin = 'PARCEL_LEGACY';
             parcel.status = 'LOCKED_FOR_SUCCESSION';
             parcel.title = { owners: [{ ownerId: 'DECEASED', sharePercentage: 100 }] } as any;
 
             mockStub.getState.withArgs('PARCEL_LEGACY').resolves(Buffer.from(JSON.stringify(parcel)));
 
             const txData = {
-                parcelId: 'PARCEL_LEGACY',
+                ulpin: 'PARCEL_LEGACY',
                 heirs: [
                     { id: 'HEIR_1', share: 50 },
                     { id: 'HEIR_2', share: 50 }
@@ -75,7 +75,7 @@ describe('Phase 33: NITI Aayog Refinements', () => {
     describe('Public Title Search', () => {
         it('should return REDACTED view', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'PARCEL_PUB_1';
+            parcel.ulpin = 'PARCEL_PUB_1';
             parcel.status = 'FREE';
             parcel.area = 5.0;
             parcel.landUseType = 'RESIDENTIAL';
@@ -88,7 +88,7 @@ describe('Phase 33: NITI Aayog Refinements', () => {
             const resultStr = await contract.getPublicParcelDetails(ctx, 'PARCEL_PUB_1');
             const result = JSON.parse(resultStr);
 
-            expect(result.parcelId).to.equal('PARCEL_PUB_1');
+            expect(result.ulpin).to.equal('PARCEL_PUB_1');
             expect(result.status).to.equal('FREE');
             expect(result.ownerCount).to.equal(1);
             // Verify Redaction

@@ -20,9 +20,9 @@ describe('Real World Nuances (Partial Transfers & Disputes)', () => {
     describe('Partial Transfers & Multi-Sig', () => {
         it('should allow partial transfer of 50% share', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'P1';
+            parcel.ulpin = 'P1';
             parcel.status = 'FREE';
-            parcel.title = { titleId: 'T1', parcelId: 'P1', owners: [{ ownerId: 'SELLER', sharePercentage: 100 }], isConclusive: true, publicationDate: Date.now() };
+            parcel.title = { titleId: 'T1', ulpin: 'P1', owners: [{ ownerId: 'SELLER', sharePercentage: 100 }], isConclusive: true, publicationDate: Date.now() };
             parcel.disputes = [];
             parcel.charges = [];
 
@@ -45,9 +45,9 @@ describe('Real World Nuances (Partial Transfers & Disputes)', () => {
 
         it('should block 100% sale if multiple owners exist (Multi-Sig constraint)', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'P1';
+            parcel.ulpin = 'P1';
             parcel.title = {
-                titleId: 'T1', parcelId: 'P1',
+                titleId: 'T1', ulpin: 'P1',
                 owners: [{ ownerId: 'A', sharePercentage: 50 }, { ownerId: 'B', sharePercentage: 50 }],
                 isConclusive: true, publicationDate: Date.now()
             };
@@ -71,9 +71,9 @@ describe('Real World Nuances (Partial Transfers & Disputes)', () => {
 
         it('should allow A to sell their own 50% share', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'P1';
+            parcel.ulpin = 'P1';
             parcel.title = {
-                titleId: 'T1', parcelId: 'P1',
+                titleId: 'T1', ulpin: 'P1',
                 owners: [{ ownerId: 'A', sharePercentage: 50 }, { ownerId: 'B', sharePercentage: 50 }],
                 isConclusive: true, publicationDate: Date.now()
             };
@@ -102,9 +102,9 @@ describe('Real World Nuances (Partial Transfers & Disputes)', () => {
     describe('Dispute Resolution', () => {
         it('should resolve a dispute and UNLOCK the parcel', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'P_LOCKED';
+            parcel.ulpin = 'P_LOCKED';
             parcel.status = 'LITIGATION';
-            parcel.disputes = [{ disputeId: 'D1', parcelId: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: 0 }];
+            parcel.disputes = [{ disputeId: 'D1', ulpin: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: 0 }];
             parcel.charges = [];
 
             mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
@@ -120,10 +120,10 @@ describe('Real World Nuances (Partial Transfers & Disputes)', () => {
 
         it('should resolve dispute but keep LOCKED if Mortgage exists', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'P_LOCKED';
+            parcel.ulpin = 'P_LOCKED';
             parcel.status = 'LITIGATION'; // Could be LITIGATION or LOCKED, logic sets specific states
-            parcel.disputes = [{ disputeId: 'D1', parcelId: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: 0 }];
-            parcel.charges = [{ chargeId: 'C1', parcelId: 'P_LOCKED', type: 'MORTGAGE', holder: 'BANK', amount: 100, active: true, timestamp: 0 }];
+            parcel.disputes = [{ disputeId: 'D1', ulpin: 'P_LOCKED', courtId: 'COURT', type: 'CIVIL_SUIT', status: 'PENDING', timestamp: 0 }];
+            parcel.charges = [{ chargeId: 'C1', ulpin: 'P_LOCKED', type: 'MORTGAGE', holder: 'BANK', amount: 100, active: true, timestamp: 0 }];
 
             mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
 

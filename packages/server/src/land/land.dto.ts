@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateParcelDto {
     @ApiProperty({ example: 'PARCEL_001', description: 'Unique ID of the Land Parcel (ULPIN)' })
-    parcelId: string;
+    ulpin: string;
 
     @ApiProperty({ example: 'IND_CITIZEN_123', description: 'Owner ID' })
     ownerId: string;
@@ -16,7 +16,7 @@ export class CreateParcelDto {
 
 export class TransferParcelDto {
     @ApiProperty({ example: 'PARCEL_001' })
-    parcelId: string;
+    ulpin: string;
 
     @ApiProperty({ example: 'SELLER_ID' })
     sellerId: string;
@@ -64,15 +64,15 @@ export class ExecuteTransactionDto {
 
 export class SubdivideParcelDto {
     @ApiProperty({ example: 'PARCEL_001' })
-    parentParcelId: string;
+    parentUlpin: string;
 
-    @ApiProperty({ example: '[{"parcelId":"PARCEL_001_1", ...}]', description: 'JSON string of children parcels' })
+    @ApiProperty({ example: '[{"ulpin":"PARCEL_001_1", ...}]', description: 'JSON string of children parcels' })
     childrenJson: string;
 }
 
 export class ConvertLandUseDto {
     @ApiProperty({ example: 'PARCEL_001' })
-    parcelId: string;
+    ulpin: string;
 
     @ApiProperty({ example: 'NON_AGRICULTURAL', enum: ['AGRICULTURAL', 'NON_AGRICULTURAL', 'INDUSTRIAL'] })
     newUse: string;
@@ -80,7 +80,7 @@ export class ConvertLandUseDto {
 
 export class RecordIntimationDto {
     @ApiProperty({ example: 'PARCEL_001' })
-    parcelId: string;
+    ulpin: string;
 
     @ApiProperty({ example: 'CHARGE', enum: ['DISPUTE', 'CHARGE'] })
     category: 'DISPUTE' | 'CHARGE';
@@ -97,7 +97,7 @@ export class RecordIntimationDto {
 
 export class ResolveDisputeDto {
     @ApiProperty({ example: 'PARCEL_001' })
-    parcelId: string;
+    ulpin: string;
 
     @ApiProperty({ example: 'DISPUTE_001' })
     disputeId: string;
@@ -111,7 +111,7 @@ export class CreateStrataUnitDto {
     unitId: string;
 
     @ApiProperty({ example: 'PARCEL_001' })
-    parentParcelId: string;
+    parentUlpin: string;
 
     @ApiProperty({ example: 5, description: 'Floor Number' })
     floor: number;
@@ -125,5 +125,5 @@ export class CreateStrataUnitDto {
 
 export class FinalizeTitleDto {
     @ApiProperty({ example: 'PARCEL_001' })
-    parcelId: string;
+    ulpin: string;
 }

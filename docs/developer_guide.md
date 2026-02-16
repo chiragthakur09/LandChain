@@ -25,6 +25,13 @@ To understand the functions, parameters, and return purposes of the core logic, 
     *   **`transferParcel`**: Performs "Atomic Mutation" by checking for active disputes or charges before updating ownership.
 
 ### Logic Helpers
+*   **[`FormatValidator.ts`](../packages/blockchain/src/logic/FormatValidator.ts)**: **(Phase 35)** Enforces Indian standards:
+    *   **ULPIN**: 14-character alphanumeric (e.g., `MH12PUNE010001`).
+    *   **CNR**: 16-character Court Case Numbers.
+    *   **RERA**: Real Estate Regulatory Authority IDs.
+*   **[`AdminValidator.ts`](../packages/blockchain/src/logic/AdminValidator.ts)**: **(Phase 20)** Enforces administrative protections:
+    *   **Tribal Land**: CNT/SPT Act restrictions (DC Permission required).
+    *   **Wakf Board**: Permanent alienation blocks on Wakf property.
 *   **[`AssetRegistry.ts`](../packages/blockchain/src/logic/AssetRegistry.ts)**: Handles the recursive subdivision logic (e.g., splitting Gat 45 into 45/1).
 *   **[`LifecycleManager.ts`](../packages/blockchain/src/logic/LifecycleManager.ts)**: Manages the conversion of land use (e.g., Agricultural to Non-Agricultural).
 *   **[`EncumbranceLogic.ts`](../packages/blockchain/src/logic/EncumbranceLogic.ts)**: Contains the logic for processing tax defaults and bank liens.
@@ -32,13 +39,31 @@ To understand the functions, parameters, and return purposes of the core logic, 
 ## 4. Data Schemas (Asset Definitions)
 The "State" of the blockchain is defined by these classes in `packages/blockchain/src/assets/`:
 
-*   **[`LandParcel.ts`](../packages/blockchain/src/assets/LandParcel.ts)**: The base 2D land object containing `surveyNo`, `subDivision`, and `geoJson`.
-*   **[`StrataUnit.ts`](../packages/blockchain/src/assets/StrataUnit.ts)**: Defines vertical units (flats/shops) and their Undivided Share (UDS) of the parent land.
-*   **[`TitleRecord.ts`](../packages/blockchain/src/assets/TitleRecord.ts)**: Maps to the Register of Titles (RoT), storing owner hashes and the `isConclusive` status.
-*   **[`ChargeRecord.ts`](../packages/blockchain/src/assets/ChargeRecord.ts)** and **[`DisputeRecord.ts`](../packages/blockchain/src/assets/DisputeRecord.ts)**: Map to the Register of Charges (RoCC) and Register of Disputes (RoD) respectively.
+*   **[`LandParcel.ts`](../packages/blockchain/src/assets/LandParcel.ts)**: The primary asset.
+    *   **Key**: `ulpinPNIU` (14-char Unique ID).
+    *   **Fields**: `geoJson` (Coordinates), `status` (FREE/LOCKED), `landUse`.
+*   **[`TitleRecord.ts`](../packages/blockchain/src/assets/TitleRecord.ts)**: Stores current ownership, shares, and transaction metadata (Stamp Duty, Witnesses).
 
 ## 5. API and Integration Layer
 For the "how" of external communication, refer to:
 
 *   **[`docs/api.md`](api.md)**: Lists the REST endpoints for interacting with the blockchain.
-*   **[`fabric.service.ts`](../packages/server/src/fabric/fabric.service.ts)**: Shows how the backend connects to the Hyperledger Fabric network to invoke transactions.
+*   **[`fabric.service.ts`](../packages/server/src/fabric/fabric.service.ts)**: Integration with Hyperledger Fabric SDK.
+
+## 6. Running the Full Stack (Docker)
+**Phase 36** introduced full stack containerization.
+
+### Prerequisites
+*   Docker & Docker Compose
+
+### Command
+```bash
+# In the project root
+docker-compose up --build
+```
+
+### Stack Components
+1.  **`landchain-fabric`**: Simulation of the Hyperledger Peer (Port 7051).
+2.  **`landchain-server`**: NestJS API Gateway (Port 3000).
+3.  **`landchain-client`**: Next.js Citizen Portal (Port 3001).
+

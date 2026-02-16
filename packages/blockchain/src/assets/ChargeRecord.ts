@@ -6,8 +6,7 @@ export class ChargeRecord {
     public chargeId: string = '';
 
     @Property()
-    public parcelId: string = '';
-
+    public ulpin: string = ''; // Foreign Key
     @Property()
     public type: 'MORTGAGE' | 'LEASE' | 'EASEMENT' | 'TAX_DEFAULT' | 'GOVERNMENT_CHARGE' = 'MORTGAGE';
 

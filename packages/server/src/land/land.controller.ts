@@ -35,7 +35,7 @@ export class LandController {
     @ApiResponse({ status: 201, description: 'Parcel Created successfully' })
     @Post()
     async createParcel(@Body() dto: CreateParcelDto) {
-        return this.fabricService.submit('createParcel', dto.parcelId, dto.ownerId, dto.geoJson, dto.docHash);
+        return this.fabricService.submit('createParcel', dto.ulpin, dto.ownerId, dto.geoJson, dto.docHash);
     }
 
     @ApiOperation({ summary: 'Transfer Ownership (Sale Deed)' })
@@ -54,7 +54,7 @@ export class LandController {
         };
         const metadataJson = JSON.stringify(metadata);
 
-        return this.fabricService.submit('transferParcel', dto.parcelId, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString(), dto.paymentUtr, metadataJson);
+        return this.fabricService.submit('transferParcel', dto.ulpin, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString(), dto.paymentUtr, metadataJson);
     }
 
     @ApiOperation({ summary: 'Get Payment Details (UTR)' })
@@ -83,36 +83,36 @@ export class LandController {
     @ApiOperation({ summary: 'Subdivide Parcel' })
     @Post('subdivide')
     async subdivideParcel(@Body() dto: SubdivideParcelDto) {
-        return this.fabricService.submit('subdivideParcel', dto.parentParcelId, dto.childrenJson);
+        return this.fabricService.submit('subdivideParcel', dto.parentUlpin, dto.childrenJson);
     }
 
     @ApiOperation({ summary: 'Convert Land Use (NA)' })
     @Post('convert')
     async convertLandUse(@Body() dto: ConvertLandUseDto) {
-        return this.fabricService.submit('convertLandUse', dto.parcelId, dto.newUse);
+        return this.fabricService.submit('convertLandUse', dto.ulpin, dto.newUse);
     }
 
     @ApiOperation({ summary: 'Record Intimation (Court/Bank)' })
     @Post('intimation')
     async recordIntimation(@Body() dto: RecordIntimationDto) {
-        return this.fabricService.submit('recordIntimation', dto.parcelId, dto.category, dto.type, dto.issuer, dto.details);
+        return this.fabricService.submit('recordIntimation', dto.ulpin, dto.category, dto.type, dto.issuer, dto.details);
     }
 
     @ApiOperation({ summary: 'Resolve Dispute' })
     @Post('resolve')
     async resolveDispute(@Body() dto: ResolveDisputeDto) {
-        return this.fabricService.submit('resolveDispute', dto.parcelId, dto.disputeId, dto.resolution);
+        return this.fabricService.submit('resolveDispute', dto.ulpin, dto.disputeId, dto.resolution);
     }
 
     @ApiOperation({ summary: 'Create Strata Unit (Vertical Property)' })
     @Post('strata')
     async createStrataUnit(@Body() dto: CreateStrataUnitDto) {
-        return this.fabricService.submit('createStrataUnit', dto.unitId, dto.parentParcelId, dto.floor.toString(), dto.carpetArea.toString(), dto.ownerId);
+        return this.fabricService.submit('createStrataUnit', dto.unitId, dto.parentUlpin, dto.floor.toString(), dto.carpetArea.toString(), dto.ownerId);
     }
 
     @ApiOperation({ summary: 'Finalize Title (Conclusive Transition)' })
     @Post('finalize')
     async finalizeTitle(@Body() dto: FinalizeTitleDto) {
-        return this.fabricService.submit('finalizeTitle', dto.parcelId);
+        return this.fabricService.submit('finalizeTitle', dto.ulpin);
     }
 }

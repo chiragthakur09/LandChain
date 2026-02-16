@@ -79,7 +79,7 @@ describe('Phase 22 Logic: Timers & Admin Validation', () => {
             mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
 
             try {
-                await contract.executeTransaction(ctx, 'APPROVE_MUTATION', JSON.stringify({ parcelId: 'P1' }), '');
+                await contract.executeTransaction(ctx, 'APPROVE_MUTATION', JSON.stringify({ ulpin: 'P1' }), '');
                 expect.fail('Should have blocked early approval');
             } catch (err: any) {
                 expect(err.message).to.include('Scrutiny Period Active');
@@ -94,7 +94,7 @@ describe('Phase 22 Logic: Timers & Admin Validation', () => {
 
             mockStub.getState.resolves(Buffer.from(JSON.stringify(parcel)));
 
-            await contract.executeTransaction(ctx, 'APPROVE_MUTATION', JSON.stringify({ parcelId: 'P1' }), '');
+            await contract.executeTransaction(ctx, 'APPROVE_MUTATION', JSON.stringify({ ulpin: 'P1' }), '');
 
             // Verify update
             expect(mockStub.putState).to.have.been.called;

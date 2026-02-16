@@ -36,7 +36,7 @@ describe('Real World Scenarios (RERA, Forest, Strata)', () => {
             mockStub.getState.withArgs('FLAT_101').resolves(Buffer.from(JSON.stringify(unit)));
 
             try {
-                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ parcelId: 'FLAT_101', buyerId: 'B1' }), '');
+                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'FLAT_101', buyerId: 'B1' }), '');
                 expect.fail('Should have blocked sale without OC');
             } catch (err: any) {
                 expect(err.message).to.include('without Occupancy Certificate');
@@ -52,7 +52,7 @@ describe('Real World Scenarios (RERA, Forest, Strata)', () => {
 
             mockStub.getState.withArgs('FLAT_102').resolves(Buffer.from(JSON.stringify(unit)));
 
-            await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ parcelId: 'FLAT_102', buyerId: 'BUYER_1' }), '');
+            await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'FLAT_102', buyerId: 'BUYER_1' }), '');
 
             // Should succeed and update state
             expect(mockStub.putState).to.have.been.called;
@@ -62,7 +62,7 @@ describe('Real World Scenarios (RERA, Forest, Strata)', () => {
     describe('Forest & Tribal Protection (Conversion)', () => {
         it('should Block Conversion of Forest Land', async () => {
             const parcel = new LandParcel();
-            parcel.parcelId = 'FOREST_001';
+            parcel.ulpin = 'FOREST_001';
             parcel.status = 'FREE';
             parcel.landUseType = 'FOREST'; // Already Forest
             parcel.isForestCRZ = true;
@@ -71,7 +71,7 @@ describe('Real World Scenarios (RERA, Forest, Strata)', () => {
 
             try {
                 // Attempt to convert Forest to Residential
-                await contract.executeTransaction(ctx, 'CONVERSION', JSON.stringify({ parcelId: 'FOREST_001', newUse: 'RESIDENTIAL' }), '');
+                await contract.executeTransaction(ctx, 'CONVERSION', JSON.stringify({ ulpin: 'FOREST_001', newUse: 'RESIDENTIAL' }), '');
                 expect.fail('Should have blocked Forest conversion');
             } catch (err: any) {
                 // Note: We haven't explicitly added this check in code yet, assuming generic logic or adding it now?
@@ -90,13 +90,13 @@ describe('Real World Scenarios (RERA, Forest, Strata)', () => {
         it('should Block Strata Sale if Parent Land is under Litigation', async () => {
             // Mock Parent Land as LITIGATION
             const parentLand = new LandParcel();
-            parentLand.parcelId = 'PARENT_LAND_1';
+            parentLand.ulpin = 'PARENT_LAND_1';
             parentLand.status = 'LITIGATION';
 
             // Mock Strata Unit
             const unit = new StrataUnit();
             unit.unitId = 'FLAT_202';
-            unit.parentParcelId = 'PARENT_LAND_1';
+            unit.parentUlpin = 'PARENT_LAND_1';
             unit.status = 'FREE';
             unit.ocDocumentHash = 'VALID_OC_HASH'; // Bypass RERA check
 
@@ -106,7 +106,7 @@ describe('Real World Scenarios (RERA, Forest, Strata)', () => {
 
             try {
                 // Attempt to sell Flat
-                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ parcelId: 'FLAT_202', buyerId: 'B2' }), '');
+                await contract.executeTransaction(ctx, 'SALE', JSON.stringify({ ulpin: 'FLAT_202', buyerId: 'B2' }), '');
                 expect.fail('Should have blocked Strata Sale due to Parent Litigation');
             } catch (err: any) {
                 expect(err.message).to.include('Operation Blocked');

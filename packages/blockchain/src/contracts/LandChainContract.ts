@@ -22,20 +22,20 @@ export class LandChainContract extends Contract {
 
     @Transaction()
     @Returns('LandParcel')
-    public async createParcel(ctx: Context, parcelId: string, ownerId: string, geoJson: string, docHash: string): Promise<LandParcel> {
-        const exists = await this.parcelExists(ctx, parcelId);
+    public async createParcel(ctx: Context, ulpin: string, ownerId: string, geoJson: string, docHash: string): Promise<LandParcel> {
+        const exists = await this.parcelExists(ctx, ulpin);
         if (exists) {
-            throw new Error(`The parcel ${parcelId} already exists`);
+            throw new Error(`The parcel ${ulpin} already exists`);
         }
 
         // Phase 35: ULPIN Adoption (Bhu-Aadhar)
         // Enforce 14-digit format.
         // NOTE: Bypassing strict check for legacy test IDs starting with 'PARCEL_', 'P', or 'TEST'
         // to ensure CI/CD stability during migration.
-        const isLegacyTestId = parcelId.startsWith('PARCEL_') || parcelId.startsWith('P') || parcelId.startsWith('TEST') || parcelId.startsWith('UNIT') || parcelId.startsWith('TITLE');
+        const isLegacyTestId = ulpin.startsWith('PARCEL_') || ulpin.startsWith('P') || ulpin.startsWith('TEST') || ulpin.startsWith('UNIT') || ulpin.startsWith('TITLE');
 
         if (!isLegacyTestId) {
-            FormatValidator.validateULPIN(parcelId);
+            FormatValidator.validateULPIN(ulpin);
         }
 
         // Phase 29: Validate Inputs
@@ -44,8 +44,8 @@ export class LandChainContract extends Contract {
         }
 
         const parcel = new LandParcel();
-        parcel.parcelId = parcelId;
-        parcel.surveyNo = parcelId.split('_')[1] || '000';
+        parcel.ulpin = ulpin;
+        parcel.surveyNo = ulpin.split('_')[1] || '000';
         parcel.subDivision = '0';
         parcel.landUseType = 'AGRICULTURAL';
         parcel.area = 1.0; // Assume Hectare input for base
@@ -66,14 +66,14 @@ export class LandChainContract extends Contract {
         parcel.localMeasurementValue = FormatValidator.calculateLocalUnit(parcel.area, 'GUNTHA');
 
         parcel.mutationRequestTimestamp = 0;
-        parcel.ulpinPNIU = ''; // Optional on creation, can be updated later via simple update mechanism? 
-        // Or if parcelId IS the ULPIN, we validate it.
-        // For now parcelId seems to be UUID style. ULPIN is separate field. 
+
+        // Or if ulpin IS the ULPIN, we validate it.
+        // For now ulpin seems to be UUID style. ULPIN is separate field. 
 
         // Initialize RoT (Title Record)
         parcel.title = new TitleRecord();
-        parcel.title.titleId = `TITLE_${parcelId}`;
-        parcel.title.parcelId = parcelId;
+        parcel.title.titleId = `TITLE_${ulpin}`;
+        parcel.title.ulpin = ulpin;
         parcel.title.owners = [{ ownerId: ownerId, sharePercentage: 100 }];
         parcel.title.isConclusive = false;
 
@@ -81,28 +81,28 @@ export class LandChainContract extends Contract {
         parcel.disputes = []; // RoD
         parcel.charges = []; // RoCC
 
-        await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+        await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(parcel)));
         return parcel;
     }
 
     @Transaction()
     @Returns('LandParcel')
-    public async getParcel(ctx: Context, parcelId: string): Promise<LandParcel> {
-        const parcelJSON = await ctx.stub.getState(parcelId);
+    public async getParcel(ctx: Context, ulpin: string): Promise<LandParcel> {
+        const parcelJSON = await ctx.stub.getState(ulpin);
         if (!parcelJSON || parcelJSON.length === 0) {
-            throw new Error(`The parcel ${parcelId} does not exist`);
+            throw new Error(`The parcel ${ulpin} does not exist`);
         }
         return JSON.parse(parcelJSON.toString());
     }
 
     @Transaction(false)
     @Returns('string')
-    public async getPublicParcelDetails(ctx: Context, parcelId: string): Promise<string> {
-        const parcel = await this.getParcel(ctx, parcelId);
+    public async getPublicParcelDetails(ctx: Context, ulpin: string): Promise<string> {
+        const parcel = await this.getParcel(ctx, ulpin);
 
         // Return redacted view for Public Title Search
         const publicView = {
-            parcelId: parcel.parcelId,
+            ulpin: parcel.ulpin,
             status: parcel.status,
             landUseType: parcel.landUseType,
             area: parcel.area,
@@ -122,13 +122,13 @@ export class LandChainContract extends Contract {
 
 
     @Transaction()
-    public async recordIntimation(ctx: Context, parcelId: string, category: 'DISPUTE' | 'CHARGE', type: string, issuer: string, details: string): Promise<void> {
-        const parcel = await this.getParcel(ctx, parcelId);
+    public async recordIntimation(ctx: Context, ulpin: string, category: 'DISPUTE' | 'CHARGE', type: string, issuer: string, details: string): Promise<void> {
+        const parcel = await this.getParcel(ctx, ulpin);
 
         if (category === 'CHARGE') {
             const charge = new ChargeRecord();
             charge.chargeId = `CHG_${parcel.charges.length + 1}`;
-            charge.parcelId = parcelId;
+            charge.ulpin = ulpin;
             charge.type = type as any; // MORTGAGE, LEASE, etc.
             charge.holder = issuer;
             charge.amount = 0; // Default or pass in arg
@@ -150,7 +150,7 @@ export class LandChainContract extends Contract {
 
             const dispute = new DisputeRecord();
             dispute.disputeId = `DSP_${parcel.disputes.length + 1}`;
-            dispute.parcelId = parcelId;
+            dispute.ulpin = ulpin;
             dispute.courtId = issuer;
             dispute.type = type as any;
             dispute.status = 'PENDING';
@@ -160,12 +160,12 @@ export class LandChainContract extends Contract {
             parcel.status = 'LITIGATION';
         }
 
-        await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+        await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(parcel)));
     }
 
     @Transaction()
-    public async transferParcel(ctx: Context, parcelId: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number, paymentUtr: string, metadataJson: string = '{}'): Promise<void> {
-        const parcel = await this.getParcel(ctx, parcelId);
+    public async transferParcel(ctx: Context, ulpin: string, sellerId: string, buyerId: string, sharePercentage: number, salePrice: number, paymentUtr: string, metadataJson: string = '{}'): Promise<void> {
+        const parcel = await this.getParcel(ctx, ulpin);
 
         // ... existing checks ...
 
@@ -229,7 +229,7 @@ export class LandChainContract extends Contract {
         // 7. Record Payment
         const payment: PaymentRecord = {
             utr: paymentUtr,
-            parcelId: parcelId,
+            ulpin: ulpin,
             amount: salePrice,
             payerId: buyerId,
             payeeId: sellerId,
@@ -262,7 +262,7 @@ export class LandChainContract extends Contract {
             };
         }
 
-        await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+        await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(parcel)));
     }
 
     @Transaction(false)
@@ -276,8 +276,8 @@ export class LandChainContract extends Contract {
     }
 
     @Transaction()
-    public async resolveDispute(ctx: Context, parcelId: string, disputeId: string, resolution: string): Promise<void> {
-        const parcel = await this.getParcel(ctx, parcelId);
+    public async resolveDispute(ctx: Context, ulpin: string, disputeId: string, resolution: string): Promise<void> {
+        const parcel = await this.getParcel(ctx, ulpin);
 
         const dispute = parcel.disputes.find(d => d.disputeId === disputeId);
         if (!dispute) {
@@ -301,15 +301,15 @@ export class LandChainContract extends Contract {
             parcel.status = 'LOCKED'; // Still locked by charge
         }
 
-        await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+        await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(parcel)));
     }
 
     // --- Strata Titling (Vertical Units) ---
 
     @Transaction()
-    public async createStrataUnit(ctx: Context, unitId: string, parentParcelId: string, floor: number, carpetArea: number, ownerId: string): Promise<StrataUnit> {
+    public async createStrataUnit(ctx: Context, unitId: string, parentUlpin: string, floor: number, carpetArea: number, ownerId: string): Promise<StrataUnit> {
         // 1. Check Parent
-        const parent = await this.getParcel(ctx, parentParcelId);
+        const parent = await this.getParcel(ctx, parentUlpin);
         if (parent.status !== 'FREE') {
             throw new Error(`Parent Parcel must be FREE to create Strata Units`);
         }
@@ -317,7 +317,7 @@ export class LandChainContract extends Contract {
         // 2. Create Unit
         const unit = new StrataUnit();
         unit.unitId = unitId;
-        unit.parentParcelId = parentParcelId;
+        unit.parentUlpin = parentUlpin;
         unit.floor = floor;
         unit.carpetArea = carpetArea;
         unit.udsPercent = 1.0; // Mock
@@ -354,23 +354,23 @@ export class LandChainContract extends Contract {
     // --- Advanced Lifecycle Methods (Subdivision / Conversion) ---
 
     @Transaction()
-    public async subdivideParcel(ctx: Context, parentParcelId: string, childrenJson: string): Promise<LandParcel[]> {
+    public async subdivideParcel(ctx: Context, parentUlpin: string, childrenJson: string): Promise<LandParcel[]> {
         const childrenData = JSON.parse(childrenJson);
-        return await AssetRegistry.subdivideParcel(ctx, parentParcelId, childrenData);
+        return await AssetRegistry.subdivideParcel(ctx, parentUlpin, childrenData);
     }
 
     @Transaction()
-    public async convertLandUse(ctx: Context, parcelId: string, newUse: string): Promise<LandParcel> {
+    public async convertLandUse(ctx: Context, ulpin: string, newUse: string): Promise<LandParcel> {
         const validUses = ['AGRICULTURAL', 'NON_AGRICULTURAL', 'INDUSTRIAL', 'FOREST', 'RESERVED'];
         if (!validUses.includes(newUse)) {
             throw new Error('Invalid Land Use Type');
         }
-        return await LifecycleManager.convertLandUse(ctx, parcelId, newUse as any);
+        return await LifecycleManager.convertLandUse(ctx, ulpin, newUse as any);
     }
 
     @Transaction()
-    public async finalizeTitle(ctx: Context, parcelId: string): Promise<void> {
-        const parcel = await this.getParcel(ctx, parcelId);
+    public async finalizeTitle(ctx: Context, ulpin: string): Promise<void> {
+        const parcel = await this.getParcel(ctx, ulpin);
 
         // 2. Check RoD (Must be empty)
         if (parcel.disputes.some(d => d.status === 'PENDING')) {
@@ -381,14 +381,14 @@ export class LandChainContract extends Contract {
         parcel.title.isConclusive = true;
 
         // 4. Emit Indemnity Event
-        ctx.stub.setEvent('TitleFinalized', Buffer.from(JSON.stringify({ parcelId, titleId: parcel.title.titleId })));
+        ctx.stub.setEvent('TitleFinalized', Buffer.from(JSON.stringify({ ulpin, titleId: parcel.title.titleId })));
 
-        await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+        await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(parcel)));
     }
 
     @Transaction(false)
-    public async parcelExists(ctx: Context, parcelId: string): Promise<boolean> {
-        const parcelJSON = await ctx.stub.getState(parcelId);
+    public async parcelExists(ctx: Context, ulpin: string): Promise<boolean> {
+        const parcelJSON = await ctx.stub.getState(ulpin);
         return parcelJSON && parcelJSON.length > 0;
     }
     // ============================================================
@@ -401,7 +401,7 @@ export class LandChainContract extends Contract {
     @Transaction()
     public async executeTransaction(ctx: Context, transactionType: string, transactionDataJson: string, evidenceHash: string): Promise<void> {
         const transactionData = JSON.parse(transactionDataJson);
-        const { parcelId } = transactionData;
+        const { ulpin } = transactionData;
 
         // Phase 27: Amalgamation handles its own fetching
         if (transactionType === 'AMALGAMATE_PARCELS') {
@@ -410,9 +410,9 @@ export class LandChainContract extends Contract {
         }
 
         // 1. Fetch Asset (LandParcel or StrataUnit)
-        const parcelBytes = await ctx.stub.getState(parcelId);
+        const parcelBytes = await ctx.stub.getState(ulpin);
         if (!parcelBytes || parcelBytes.length === 0) {
-            throw new Error(`Asset ${parcelId} not found`);
+            throw new Error(`Asset ${ulpin} not found`);
         }
         const parcel: any = JSON.parse(parcelBytes.toString());
 
@@ -432,8 +432,8 @@ export class LandChainContract extends Contract {
         }
 
         // Check Parent Land Status if this is a Strata Unit
-        if ('parentParcelId' in parcel && (parcel as any).parentParcelId) {
-            const parentId = (parcel as any).parentParcelId;
+        if ('parentUlpin' in parcel && (parcel as any).parentUlpin) {
+            const parentId = (parcel as any).parentUlpin;
             const parentBytes = await ctx.stub.getState(parentId);
             if (parentBytes && parentBytes.length > 0) {
                 const parentAsset = JSON.parse(parentBytes.toString());
@@ -451,7 +451,7 @@ export class LandChainContract extends Contract {
             case 'SALE':
                 // RERA Check (If StrataUnit)
                 if (parcel.docHash === undefined) { // HACK: StrataUnit structure check
-                    // It's likely a StrataUnit if it has parentParcelId, but here we are using 'any' type.
+                    // It's likely a StrataUnit if it has parentUlpin, but here we are using 'any' type.
                     // Let's assume for now we check if specific fields exist.
                 }
                 if (parcel.unitId) { // It is a Strata Unit
@@ -525,11 +525,11 @@ export class LandChainContract extends Contract {
 
         // 4. Update State (Partition handles its own puts)
         if (transactionType !== 'PARTITION') {
-            await ctx.stub.putState(parcelId, Buffer.from(JSON.stringify(parcel)));
+            await ctx.stub.putState(ulpin, Buffer.from(JSON.stringify(parcel)));
         }
 
         // 5. Emit Event
-        ctx.stub.setEvent('TransactionExecuted', Buffer.from(JSON.stringify({ type: transactionType, parcelId, timestamp: Date.now() })));
+        ctx.stub.setEvent('TransactionExecuted', Buffer.from(JSON.stringify({ type: transactionType, ulpin, timestamp: Date.now() })));
     }
 
     private async processSale(ctx: Context, parcel: LandParcel, data: any) {
@@ -542,18 +542,18 @@ export class LandChainContract extends Contract {
     private async processPartition(ctx: Context, parentParcel: LandParcel, data: any) {
         // data: { subParcels: [{ id, area, owner, surveySuffix }] }
         parentParcel.status = 'RETIRED';
-        await ctx.stub.putState(parentParcel.parcelId, Buffer.from(JSON.stringify(parentParcel)));
+        await ctx.stub.putState(parentParcel.ulpin, Buffer.from(JSON.stringify(parentParcel)));
 
         for (const child of data.subParcels) {
             const newParcel = new LandParcel();
             Object.assign(newParcel, parentParcel);
-            newParcel.parcelId = child.id;
+            newParcel.ulpin = child.id;
             newParcel.subDivision = parentParcel.subDivision + '/' + child.surveySuffix;
             newParcel.area = child.area;
             newParcel.status = 'FREE';
             newParcel.title = { ...parentParcel.title, owners: [{ ownerId: child.owner, sharePercentage: 100 }], isConclusive: false, publicationDate: Date.now() };
 
-            await ctx.stub.putState(newParcel.parcelId, Buffer.from(JSON.stringify(newParcel)));
+            await ctx.stub.putState(newParcel.ulpin, Buffer.from(JSON.stringify(newParcel)));
         }
     }
 
@@ -620,10 +620,10 @@ export class LandChainContract extends Contract {
     // =========================================================
 
     private async processAmalgamation(ctx: Context, data: any) {
-        // data: { constituentParcelIds: string[], newParcelId: string, newGeoJson: string }
-        const { constituentParcelIds, newParcelId, newGeoJson } = data;
+        // data: { constituentUlpins: string[], newUlpin: string, newGeoJson: string }
+        const { constituentUlpins, newUlpin, newGeoJson } = data;
 
-        if (!constituentParcelIds || constituentParcelIds.length < 2) {
+        if (!constituentUlpins || constituentUlpins.length < 2) {
             throw new Error('Amalgamation requires at least two parcels.');
         }
 
@@ -631,7 +631,7 @@ export class LandChainContract extends Contract {
         let primaryOwner = '';
 
         // 1. Validate Source Parcels
-        for (const pid of constituentParcelIds) {
+        for (const pid of constituentUlpins) {
             const parcelBytes = await ctx.stub.getState(pid);
             if (!parcelBytes || parcelBytes.length === 0) throw new Error(`Parcel ${pid} not found`);
             const p: LandParcel = JSON.parse(parcelBytes.toString());
@@ -649,23 +649,23 @@ export class LandChainContract extends Contract {
         // 2. Retire Source Parcels
         for (const p of sourceParcels) {
             p.status = 'RETIRED';
-            await ctx.stub.putState(p.parcelId, Buffer.from(JSON.stringify(p)));
+            await ctx.stub.putState(p.ulpin, Buffer.from(JSON.stringify(p)));
         }
 
         // 3. Create Merged Parcel
         const mergedParcel = new LandParcel();
-        mergedParcel.parcelId = newParcelId;
+        mergedParcel.ulpin = newUlpin;
         mergedParcel.status = 'FREE';
         mergedParcel.title = new TitleRecord();
-        mergedParcel.title.parcelId = newParcelId;
+        mergedParcel.title.ulpin = newUlpin;
         mergedParcel.title.owners = [{ ownerId: primaryOwner, sharePercentage: 100 }];
         mergedParcel.title.isConclusive = false; // New Survey needed
         mergedParcel.geoJson = newGeoJson;
         mergedParcel.area = sourceParcels.reduce((sum, p) => sum + p.area, 0); // Sum areas
         mergedParcel.landUseType = sourceParcels[0].landUseType; // Inherit from first
-        mergedParcel.ulpinPNIU = ''; // Pending new assignment
 
-        await ctx.stub.putState(newParcelId, Buffer.from(JSON.stringify(mergedParcel)));
+
+        await ctx.stub.putState(newUlpin, Buffer.from(JSON.stringify(mergedParcel)));
     }
 
     private async processBoundaryRectification(ctx: Context, parcel: LandParcel, data: any) {
@@ -677,7 +677,7 @@ export class LandChainContract extends Contract {
         // Phase 29: Valid ULPIN Update
         if (data.newUlpin) {
             FormatValidator.validateULPIN(data.newUlpin);
-            parcel.ulpinPNIU = data.newUlpin;
+
         }
 
         // In a real system, we would log the surveyRef to a history or immutable trail.

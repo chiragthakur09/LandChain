@@ -36,7 +36,7 @@ erDiagram
 
 ```typescript
 LandParcel {
-  parcelId: string;
+  ulpin: string;
   surveyNo: string;
   subDivision: string; // e.g., "/1/A"
   landUse: 'AGRI' | 'NA' | 'IND' | 'FOREST';
@@ -49,7 +49,7 @@ LandParcel {
 
 ### Strata Titling (Vertical Property)
 For apartments and commercial units, we use `StrataUnit`.
-- **Linked**: Contains `parentParcelId` linking to the Land.
+- **Linked**: Contains `parentUlpin` linking to the Land.
 - **Independent**: Has its own independent `RoT`, `RoD`, and `RoCC`.
 - **UDS/Carpet Area**: Tracks Undivided Share of Land and verified area.
 
@@ -75,7 +75,7 @@ sequenceDiagram
 
     Client->>API: POST /land/transaction (Type=SALE, Data)
     API->>Chaincode: executeTransaction(SALE, Data)
-    Chaincode->>State: convert(parcelId) -> LandParcel
+    Chaincode->>State: convert(ulpin) -> LandParcel
     State-->>Chaincode: Parcel Object
     
     Chaincode->>Chaincode: Check Status (Is FREE?)

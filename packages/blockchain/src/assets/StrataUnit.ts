@@ -9,7 +9,7 @@ export class StrataUnit {
     public unitId: string = ''; // e.g. "APT_101"
 
     @Property()
-    public parentParcelId: string = ''; // Link to main LandParcel
+    public parentUlpin: string = ''; // Link to Parent LandParcel
 
     @Property()
     public carpetArea: number = 0; // Sq Ft / Sq Mtrs

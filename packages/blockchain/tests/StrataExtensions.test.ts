@@ -27,7 +27,7 @@ describe('Strata Extensions (Checklist)', () => {
 
     const createMockParent = (id: string, status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED'): LandParcel => {
         return {
-            parcelId: id,
+            ulpin: id,
             status: status,
             title: { owners: [{ ownerId: 'BUILDER', sharePercentage: 100 }] } as any,
             // ... minimal other fields
@@ -37,7 +37,7 @@ describe('Strata Extensions (Checklist)', () => {
     const createMockUnit = (id: string, parentId: string): StrataUnit => {
         return {
             unitId: id,
-            parentParcelId: parentId,
+            parentUlpin: parentId,
             status: 'FREE',
             title: { owners: [{ ownerId: 'OWNER_1', sharePercentage: 100 }] } as any,
             ocDocumentHash: 'QmValidOC', // Ensure RERA Check passes
@@ -52,7 +52,7 @@ describe('Strata Extensions (Checklist)', () => {
         mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
         mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
 
-        const txData = { parcelId: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+        const txData = { ulpin: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
 
         try {
             await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
@@ -70,7 +70,7 @@ describe('Strata Extensions (Checklist)', () => {
         mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
         mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
 
-        const txData = { parcelId: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+        const txData = { ulpin: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
 
         try {
             await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
@@ -88,7 +88,7 @@ describe('Strata Extensions (Checklist)', () => {
         mockStub.getState.withArgs('UNIT_101').resolves(Buffer.from(JSON.stringify(unit)));
         mockStub.getState.withArgs('PARENT_1').resolves(Buffer.from(JSON.stringify(parent)));
 
-        const txData = { parcelId: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
+        const txData = { ulpin: 'UNIT_101', buyerId: 'BUYER_1', price: 5000000, share: 100 };
 
         await contract.executeTransaction(ctx, 'SALE', JSON.stringify(txData), '');
 

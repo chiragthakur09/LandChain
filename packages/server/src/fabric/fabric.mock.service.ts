@@ -85,7 +85,7 @@ export class FabricMockService implements OnModuleInit {
             if (utr === 'UTR_VALID_MOCK') {
                 return {
                     utr: utr,
-                    parcelId: 'PARCEL_MOCK_123',
+                    ulpin: 'PARCEL_MOCK_123',
                     amount: 5000000,
                     payerId: 'BUYER_MOCK',
                     payeeId: 'SELLER_MOCK',
@@ -98,11 +98,11 @@ export class FabricMockService implements OnModuleInit {
         }
 
         if (functionName === 'getParcel') {
-            const parcelId = args[0];
+            const ulpin = args[0];
 
-            if (parcelId === 'PARCEL_001') {
+            if (ulpin === 'MH12PUNE010001') {
                 return {
-                    parcelId: parcelId,
+                    ulpin: ulpin,
                     surveyNo: '100',
                     subDivision: '0',
                     landUseType: 'AGRICULTURAL',
@@ -110,7 +110,7 @@ export class FabricMockService implements OnModuleInit {
                     status: 'FREE',
                     geoJson: 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))',
                     title: {
-                        titleId: 'TITLE_PARCEL_001',
+                        titleId: 'TITLE_MH12PUNE010001',
                         owners: [{ ownerId: 'IND_CITIZEN_123', sharePercentage: 100 }],
                         isConclusive: false
                     },
@@ -119,9 +119,9 @@ export class FabricMockService implements OnModuleInit {
                 };
             }
 
-            if (parcelId === 'PARCEL_LOCKED') {
+            if (ulpin === 'MH12LOCK000001') {
                 return {
-                    parcelId: parcelId,
+                    ulpin: ulpin,
                     surveyNo: '100',
                     subDivision: '5',
                     landUseType: 'RESIDENTIAL',
@@ -129,7 +129,7 @@ export class FabricMockService implements OnModuleInit {
                     status: 'LOCKED',
                     geoJson: 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))',
                     title: {
-                        titleId: 'TITLE_PARCEL_LOCKED',
+                        titleId: 'TITLE_MH12LOCK000001',
                         owners: [{ ownerId: 'IND_CITIZEN_456', sharePercentage: 100 }],
                         isConclusive: false
                     },
@@ -145,17 +145,17 @@ export class FabricMockService implements OnModuleInit {
             }
 
             // Throw error for unknown parcels to match Chaincode behavior
-            throw new Error(`The parcel ${parcelId} does not exist`);
+            throw new Error(`The parcel ${ulpin} does not exist`);
         }
 
         if (functionName === 'getPublicParcelDetails') {
-            const parcelId = args[0];
+            const ulpin = args[0];
             // Reuse getParcel logic for mock data
-            const fullParcel = this.getMockData('getParcel', [parcelId]);
+            const fullParcel = this.getMockData('getParcel', [ulpin]);
 
             // Redact it
             return {
-                parcelId: fullParcel.parcelId,
+                ulpin: fullParcel.ulpin,
                 status: fullParcel.status,
                 location: 'Available',
                 ownerCount: fullParcel.title.owners.length,

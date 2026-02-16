@@ -13,7 +13,7 @@ Returns the merged view of RoT, RoD, and RoCC.
 **Response:**
 ```json
 {
-  "parcelId": "PARCEL_001",
+  "ulpin": "MH12PUNE010001",
   "status": "FREE",
   "title": { "titleId": "...", "owners": [...], "isConclusive": false },
   "disputes": [],
@@ -27,7 +27,7 @@ Returns the merged view of RoT, RoD, and RoCC.
 **Body:**
 ```json
 {
-  "parcelId": "PARCEL_001",
+  "ulpin": "MH12PUNE010001",
   "newOwnerId": "IND_CITIZEN_789",
   "salePrice": 5000000
 }
@@ -43,7 +43,7 @@ Pushes an entry to the Register of Disputes (RoD) or Charges (RoCC).
 **Body:**
 ```json
 {
-  "parcelId": "PARCEL_001",
+  "ulpin": "MH12PUNE010001",
   "category": "CHARGE",       // or "DISPUTE"
   "type": "MORTGAGE",         // "TAX_DEFAULT", "CIVIL_SUIT"
   "issuer": "SBI_BANK_NODE",
@@ -59,8 +59,8 @@ Mints a new Apartment/Unit linked to a parent land.
 **Body:**
 ```json
 {
-  "unitId": "APT_101",
-  "parentParcelId": "PARCEL_001",
+  "unitId": "MH12APT00101",
+  "parentUlpin": "MH12PUNE010001",
   "floor": 1,
   "carpetArea": 1200,
   "ownerId": "IND_CITIZEN_999"
@@ -76,7 +76,7 @@ Attempts to mark the title as Conclusive after the statutory period.
 **Body:**
 ```json
 {
-  "parcelId": "PARCEL_001"
+  "ulpin": "MH12PUNE010001"
 }
 ```
 
@@ -105,7 +105,7 @@ The API uses standard HTTP status codes to indicate the success or failure of an
 | `201 Created` | The resource was successfully created. | Parcel/Unit minted. |
 | `400 Bad Request` | The request was invalid or cannot be served. | Missing parameters, Logic errors. |
 | `403 Forbidden` | The request is understood, but it has been refused or access is denied. | Transfer of **LOCKED** asset. |
-| `404 Not Found` | The requested resource could not be found. | Querying unknown `parcelId`. |
+| `404 Not Found` | The requested resource could not be found. | Querying unknown `ulpin`. |
 | `409 Conflict` | The request could not be completed due to a conflict with the current state of the target resource. | Asset already exists. |
 | `500 Internal Server Error` | An unexpected condition was encountered. | Fabric network issues. |
 
