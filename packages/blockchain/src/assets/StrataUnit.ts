@@ -21,6 +21,9 @@ export class StrataUnit {
     public udsPercent: number = 0; // Undivided Share of Land
 
     @Property()
+    public status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED' = 'FREE';
+
+    @Property()
     public title: TitleRecord = new TitleRecord();
 
     @Property()

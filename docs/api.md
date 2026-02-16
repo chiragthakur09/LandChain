@@ -94,3 +94,27 @@ Executes any supported transaction type via the dynamic state machine.
   "authToken": "MOCK_AADHAAR_TOKEN_..."
 }
 ```
+
+## Error Handling
+
+The API uses standard HTTP status codes to indicate the success or failure of an API request.
+
+| Status Code | Description | Verified Scenario |
+| :--- | :--- | :--- |
+| `200 OK` | The request was successful. | Asset fetched found. |
+| `201 Created` | The resource was successfully created. | Parcel/Unit minted. |
+| `400 Bad Request` | The request was invalid or cannot be served. | Missing parameters, Logic errors. |
+| `403 Forbidden` | The request is understood, but it has been refused or access is denied. | Transfer of **LOCKED** asset. |
+| `404 Not Found` | The requested resource could not be found. | Querying unknown `parcelId`. |
+| `409 Conflict` | The request could not be completed due to a conflict with the current state of the target resource. | Asset already exists. |
+| `500 Internal Server Error` | An unexpected condition was encountered. | Fabric network issues. |
+
+### Standard Error Response Body
+```json
+{
+  "statusCode": 403,
+  "timestamp": "2026-02-16T10:30:00.000Z",
+  "path": "/land/transaction",
+  "message": "Asset is LOCKED. Cannot execute SALE."
+}
+```

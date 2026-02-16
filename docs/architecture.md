@@ -116,5 +116,15 @@ External entities (Courts, Banks) push data to the blockchain.
 4.  **Checks**: Contract ensures `RoD` is empty.
 5.  **Result**: Title becomes `Conclusive`. Government issues Indemnity.
 
-## 4. Technology Stack
-(Unchanged: Hyperledger Fabric v2.5, NestJS, Next.js)
+## 5. Error Handling Strategy (Standardized)
+To ensure consistent communication between the Blockchain and Client, the Server Layer implements a **Global Exception Filter**.
+
+- **Fabric Errors** (e.g., "Asset not found", "Transfer Denied") are caught by the NestJS Filter.
+- **Mapping Logic**:
+    - `Asset not found` -> **404 Not Found**
+    - `Asset is LOCKED` -> **403 Forbidden**
+    - `Asset already exists` -> **409 Conflict**
+- **Client Benefit**: The UI receives standard HTTP status codes instead of raw Chaincode error strings.
+
+## 6. Technology Stack
+(Hyperledger Fabric v2.5, NestJS, Next.js)

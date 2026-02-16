@@ -54,6 +54,7 @@ npm run dev
 - `packages/server`: The Bridge API (`LandController`).
 - `packages/client`: The Next.js "Hero" UI.
 - `docs/`: Architecture and Vision documentation.
+    - [**Developer Guide**](docs/developer_guide.md): Detailed Codebase Walkthrough.
 
 ---
 *Built with ❤️ for Digital India*

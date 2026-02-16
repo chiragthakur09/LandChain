@@ -229,6 +229,7 @@ export class LandChainContract extends Contract {
         unit.floor = floor;
         unit.carpetArea = carpetArea;
         unit.udsPercent = 1.0; // Mock
+        unit.status = 'FREE';
 
         // 3. Init RoT for Unit
         unit.title = new TitleRecord();
@@ -302,12 +303,11 @@ export class LandChainContract extends Contract {
         const { parcelId } = transactionData;
 
         // 1. Fetch Asset (LandParcel or StrataUnit)
-        // For simplicity, assuming LandParcel for now. dynamic loading for StrataUnit to be added.
         const parcelBytes = await ctx.stub.getState(parcelId);
         if (!parcelBytes || parcelBytes.length === 0) {
             throw new Error(`Asset ${parcelId} not found`);
         }
-        const parcel: LandParcel = JSON.parse(parcelBytes.toString());
+        const parcel: any = JSON.parse(parcelBytes.toString());
 
         // 2. Global Validation (State Machine)
         if (parcel.status !== 'FREE') {
