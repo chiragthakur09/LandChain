@@ -115,4 +115,10 @@ export class LandController {
     async finalizeTitle(@Body() dto: FinalizeTitleDto) {
         return this.fabricService.submit('finalizeTitle', dto.ulpin);
     }
+
+    @ApiOperation({ summary: 'Get Pending Mutations (Registrar View)' })
+    @Get('pending')
+    async getPendingMutations() {
+        return this.fabricService.query('queryPendingMutations');
+    }
 }

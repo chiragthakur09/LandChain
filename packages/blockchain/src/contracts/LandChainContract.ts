@@ -611,6 +611,36 @@ export class LandChainContract extends Contract {
         parcel.title.isConclusive = false;
     }
 
+    // =========================================================
+    // Admin Queries
+    // =========================================================
+
+    @Transaction(false)
+    @Returns('string')
+    public async queryPendingMutations(ctx: Context): Promise<string> {
+        const queryString = {
+            selector: {
+                status: 'PENDING_SCRUTINY'
+            }
+        };
+        const iterator = await ctx.stub.getQueryResult(JSON.stringify(queryString));
+        const results = [];
+        let result = await iterator.next();
+        while (!result.done) {
+            const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+            let record;
+            try {
+                record = JSON.parse(strValue);
+            } catch (err) {
+                console.log(err);
+                record = strValue;
+            }
+            results.push(record);
+            result = await iterator.next();
+        }
+        return JSON.stringify(results);
+    }
+
     private async finalizePartitionRetirement(ctx: Context, parcel: LandParcel, data: any) {
         // data: { newParcels: [...] } 
         // This is called AFTER creating new parcels usually.

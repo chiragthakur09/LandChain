@@ -165,6 +165,38 @@ export class FabricMockService implements OnModuleInit {
             };
         }
 
+        if (functionName === 'queryPendingMutations') {
+            // Mock Data for Demo: 2 Pending Mutations
+            return [
+                {
+                    ulpin: 'MH12PUN0000001',
+                    surveyNo: '100/1',
+                    status: 'PENDING_SCRUTINY',
+                    mutationRequestTimestamp: Date.now() - (29 * 24 * 60 * 60 * 1000), // 29 Days ago (1 day left)
+                    title: {
+                        owners: [{ ownerId: 'BUYER_DEMO_1', sharePercentage: 100 }],
+                        isConclusive: false
+                    },
+                    metadata: {
+                        stampDuty: { amount: 50000, paidBy: 'BUYER_DEMO_1', date: Date.now() }
+                    }
+                },
+                {
+                    ulpin: 'MH12MUM0000002',
+                    surveyNo: '55/2',
+                    status: 'PENDING_SCRUTINY',
+                    mutationRequestTimestamp: Date.now() - (15 * 24 * 60 * 60 * 1000), // 15 Days ago
+                    title: {
+                        owners: [{ ownerId: 'BUYER_DEMO_2', sharePercentage: 100 }],
+                        isConclusive: false
+                    },
+                    metadata: {
+                        stampDuty: { amount: 75000, paidBy: 'BUYER_DEMO_2', date: Date.now() }
+                    }
+                }
+            ];
+        }
+
         return {};
     }
 }
