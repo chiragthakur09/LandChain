@@ -29,3 +29,9 @@ jobs:
       
     - name: Run Blockchain Tests
       run: npm test --workspace=packages/blockchain
+
+    - name: Build Server Package
+      run: npm run build --workspace=packages/server
+
+    - name: Build Client Package
+      run: npm run build --workspace=packages/client
