@@ -29,4 +29,4 @@ LandChain is the **reference implementation** of the **Model Conclusive Land Tit
 
 | Act Requirement | Code Implementation |
 | :--- | :--- |
-| **Vertical Units**: Defined ownership of apartments. | `StrataUnit` asset class. Links to `parentParcelId` but maintains independent RoT/RoD/RoCC. |
+| **Vertical Units**: Defined ownership of apartments. | `StrataUnit` asset class. Links to `parentUlpin` but maintains independent RoT/RoD/RoCC. |

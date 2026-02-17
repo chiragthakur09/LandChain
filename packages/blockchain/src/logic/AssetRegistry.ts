@@ -31,7 +31,7 @@ export class AssetRegistry {
         const createdChildren: LandParcel[] = [];
         for (const childData of childrenData) {
             const child = new LandParcel();
-            child.parcelId = childData.parcelId;
+            child.ulpin = childData.ulpin;
             child.surveyNo = parent.surveyNo;
             child.subDivision = childData.subDivision; // e.g. "1", "2"
             child.landUseType = parent.landUseType; // Inherit land use
@@ -42,14 +42,14 @@ export class AssetRegistry {
 
             // Link new RoT
             child.title = JSON.parse(JSON.stringify(parent.title)); // Deep copy title
-            child.title.parcelId = child.parcelId;
-            child.title.titleId = `TITLE_${child.parcelId}`;
+            child.title.ulpin = child.ulpin;
+            child.title.titleId = `TITLE_${child.ulpin}`;
 
             // Reset Registers
             child.disputes = [];
             child.charges = [];
 
-            await ctx.stub.putState(child.parcelId, Buffer.from(JSON.stringify(child)));
+            await ctx.stub.putState(child.ulpin, Buffer.from(JSON.stringify(child)));
             createdChildren.push(child);
         }
 

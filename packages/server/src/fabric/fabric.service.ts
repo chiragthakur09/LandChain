@@ -1,114 +1,107 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { Gateway, Wallets } from 'fabric-network';
 import * as path from 'path';
 import * as fs from 'fs';
+import { FabricMockService } from './fabric.mock.service';
 
 @Injectable()
-export class FabricService implements OnModuleInit {
+export class FabricService implements OnModuleInit, OnModuleDestroy {
     private gateway: Gateway;
     private isConnected = false;
+    private mockService: FabricMockService;
+
+    constructor() {
+        this.mockService = new FabricMockService();
+    }
 
     async onModuleInit() {
-        // In a real app, we would connect here.
-        // For POC without running network, we skip connection to allow app to start.
-        console.log('FabricService initialized. Pending connection to network...');
+        // Decide mode based on ENV or default to trying real connection
+        const useMock = process.env.USE_MOCK_FABRIC === 'true';
+
+        if (useMock) {
+            console.log('[FabricService] USE_MOCK_FABRIC=true. Skipping Network Connection.');
+            await this.mockService.onModuleInit();
+            return;
+        }
+
+        await this.connect();
+    }
+
+    async onModuleDestroy() {
+        if (this.gateway) {
+            this.gateway.disconnect();
+        }
     }
 
     async connect() {
-        if (this.isConnected) return;
-
         try {
-            // TODO: Load connection profile and wallet
-            // const ccpPath = path.resolve(__dirname, '..', '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com', 'connection-org1.json');
-            // const walletPath = path.join(process.cwd(), 'wallet');
-            // const wallet = await Wallets.newFileSystemWallet(walletPath);
+            const ccpPath = path.resolve(__dirname, '..', '..', '..', 'network', 'connection.json');
+            const walletPath = path.join(process.cwd(), 'wallet'); // Root wallet
 
-            // this.gateway = new Gateway();
-            // await this.gateway.connect(ccp, { wallet, identity: 'appUser', discovery: { enabled: true, asLocalhost: true } });
+            if (!fs.existsSync(ccpPath)) {
+                throw new Error(`Connection profile not found at ${ccpPath}`);
+            }
+
+            if (!fs.existsSync(walletPath)) {
+                console.warn(`[FabricService] Wallet not found at ${walletPath}. Creating temporary memory wallet...`);
+                // In prod, this would fail. For dev, we might fallback.
+            }
+
+            const wallet = await Wallets.newFileSystemWallet(walletPath);
+
+            // Check if user exists
+            const identity = await wallet.get('appUser');
+            if (!identity) {
+                console.warn('[FabricService] Identity "appUser" not found in wallet. Cannot connect.');
+                // Fallback to Mock if Auth fails
+                return;
+            }
+
+            this.gateway = new Gateway();
+            await this.gateway.connect(JSON.parse(fs.readFileSync(ccpPath, 'utf8')), {
+                wallet,
+                identity: 'appUser',
+                discovery: { enabled: true, asLocalhost: true }
+            });
 
             this.isConnected = true;
-            console.log('Connected to Hyperledger Fabric Network');
+            console.log('[FabricService] Successfully connected to Hyperledger Fabric Network (mychannel)');
+
         } catch (error) {
-            console.error('Failed to connect to Fabric network', error);
+            console.error('[FabricService] Failed to connect to Fabric network:', error.message);
+            console.warn('[FabricService] Falling back to Mock Mode.');
         }
     }
 
     async query(functionName: string, ...args: string[]): Promise<any> {
-        // Mock Response for Vibe Coding (since network isn't running)
         if (!this.isConnected) {
-            console.warn('Network not connected. Returning mock data.');
-            return this.getMockData(functionName, args);
+            return this.mockService.query(functionName, ...args);
         }
 
-        const network = await this.gateway.getNetwork('mychannel');
-        const contract = network.getContract('landchain');
-        const result = await contract.evaluateTransaction(functionName, ...args);
-        return JSON.parse(result.toString());
+        try {
+            const network = await this.gateway.getNetwork('mychannel');
+            const contract = network.getContract('landchain');
+            const result = await contract.evaluateTransaction(functionName, ...args);
+            return JSON.parse(result.toString());
+        } catch (err) {
+            console.error(`[FabricService] Query error for ${functionName}:`, err);
+            throw err;
+        }
     }
 
     async submit(functionName: string, ...args: string[]): Promise<any> {
         if (!this.isConnected) {
-            console.warn('Network not connected. Simulating submission.');
-            return { success: true, txId: 'MOCK_TX_' + Date.now() };
+            return this.mockService.submit(functionName, ...args);
         }
 
-        const network = await this.gateway.getNetwork('mychannel');
-        const contract = network.getContract('landchain');
-        await contract.submitTransaction(functionName, ...args);
-        return { success: true };
-    }
-
-    private getMockData(functionName: string, args: string[]) {
-        if (functionName === 'getParcel') {
-            const parcelId = args[0];
-
-            if (parcelId === 'PARCEL_001') {
-                return {
-                    parcelId: parcelId,
-                    surveyNo: '100',
-                    subDivision: '0',
-                    landUseType: 'AGRICULTURAL',
-                    area: 10.0,
-                    status: 'FREE',
-                    geoJson: 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))',
-                    title: {
-                        titleId: 'TITLE_PARCEL_001',
-                        owners: [{ ownerId: 'IND_CITIZEN_123', sharePercentage: 100 }],
-                        isConclusive: false
-                    },
-                    disputes: [],
-                    charges: []
-                };
-            }
-
-            if (parcelId === 'PARCEL_LOCKED') {
-                return {
-                    parcelId: parcelId,
-                    surveyNo: '100',
-                    subDivision: '5',
-                    landUseType: 'RESIDENTIAL',
-                    area: 0.5,
-                    status: 'LOCKED',
-                    geoJson: 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))',
-                    title: {
-                        titleId: 'TITLE_PARCEL_LOCKED',
-                        owners: [{ ownerId: 'IND_CITIZEN_456', sharePercentage: 100 }],
-                        isConclusive: false
-                    },
-                    disputes: [],
-                    charges: [{
-                        chargeId: 'CHG_001',
-                        type: 'TAX_DEFAULT',
-                        holder: 'MUNICIPAL_CORP',
-                        active: true,
-                        amount: 5000
-                    }]
-                };
-            }
-
-            // Throw error for unknown parcels to match Chaincode behavior
-            throw new Error(`The parcel ${parcelId} does not exist`);
+        try {
+            const network = await this.gateway.getNetwork('mychannel');
+            const contract = network.getContract('landchain');
+            await contract.submitTransaction(functionName, ...args);
+            return { success: true, endorsedBy: 'RealFabricPeer' };
+        } catch (err) {
+            console.error(`[FabricService] Submit error for ${functionName}:`, err);
+            throw err;
         }
-        return {};
     }
 }

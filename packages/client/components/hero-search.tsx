@@ -4,20 +4,20 @@ import { useState } from "react";
 import { Search, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
 
 export function HeroSearch() {
-    const [parcelId, setParcelId] = useState("");
+    const [ulpin, setParcelId] = useState("");
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState("");
 
     const handleVerify = async () => {
-        if (!parcelId) return;
+        if (!ulpin) return;
         setLoading(true);
         setResult(null);
         setError("");
 
         try {
             // Use 127.0.0.1 to avoid ambiguous localhost resolution (IPv4 vs IPv6)
-            const res = await fetch(`http://127.0.0.1:3001/land/${parcelId}`);
+            const res = await fetch(`http://127.0.0.1:3001/land/${ulpin}`);
 
             if (!res.ok) {
                 throw new Error(`Server responded with ${res.status}: ${res.statusText}`);
@@ -51,7 +51,7 @@ export function HeroSearch() {
                     type="text"
                     placeholder="Enter Survey Number / Parcel ID (e.g. PARCEL_001)"
                     className="w-full py-4 pl-12 pr-32 text-lg border-2 border-gray-200 rounded-2xl focus:border-indigo-600 focus:outline-none shadow-sm transition-all"
-                    value={parcelId}
+                    value={ulpin}
                     onChange={(e) => setParcelId(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
                 />
@@ -82,7 +82,7 @@ export function HeroSearch() {
                                 {result.status === 'FREE' ? 'Conclusive Title Verified' : 'Encumbrance Detected'}
                             </h3>
                             <p className="mt-1 text-gray-600">
-                                Parcel ID: <span className="font-mono font-medium">{result.parcelId}</span>
+                                Parcel ID: <span className="font-mono font-medium">{result.ulpin}</span>
                             </p>
 
                             <div className="mt-4 grid grid-cols-2 gap-4">

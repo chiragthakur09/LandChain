@@ -1,0 +1,165 @@
+
+> landchain-chaincode@0.0.1 test
+> ts-mocha tests/**/*.test.ts tests/ComprehensiveMetadata.test.ts
+
+2026-02-16T17:40:40.740Z [32minfo[39m [c-api:./lib/annotations/object.js]                 @Object args: Target -> %s "Function" 
+2026-02-16T17:40:40.741Z [32minfo[39m [c-api:./lib/annotations/object.js]                 @Object args: Target -> %s "Function" 
+2026-02-16T17:40:40.742Z [32minfo[39m [c-api:./lib/annotations/object.js]                 @Object args: Target -> %s "Function" 
+2026-02-16T17:40:40.742Z [32minfo[39m [c-api:./lib/annotations/object.js]                 @Object args: Target -> %s "Function" 
+2026-02-16T17:40:40.746Z [32minfo[39m [c-api:./lib/annotations/object.js]                 @Object args: Target -> %s "Function" 
+2026-02-16T17:40:40.750Z [32minfo[39m [c-api:./lib/annotations/object.js]                 @Object args: Target -> %s "Function" 
+2026-02-16T17:40:40.755Z [32minfo[39m [c-api:./lib/annotations/object.js]                 @Object args: Target -> %s "Function" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> initLedger, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Returns args: ", Property Key -> createParcel, Return Type -> LandParcel,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> createParcel, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Returns args: ", Property Key -> getParcel, Return Type -> LandParcel,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> getParcel, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Returns args: ", Property Key -> getPublicParcelDetails, Return Type -> string,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> getPublicParcelDetails, Commit -> false,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.771Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> recordIntimation, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.772Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> transferParcel, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.772Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> getPaymentDetails, Commit -> false,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.772Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> resolveDispute, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.772Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> createStrataUnit, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.772Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Returns args: ", Property Key -> getStrataUnit, Return Type -> StrataUnit,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.772Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> getStrataUnit, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.772Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> subdivideParcel, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.773Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> convertLandUse, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.773Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> finalizeTitle, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.773Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> parcelExists, Commit -> false,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.773Z [32minfo[39m [c-api:./lib/annotations/transaction.js]            @Transaction args: "Property Key -> executeTransaction, Commit -> true,","Target ->","LandChainContract" 
+2026-02-16T17:40:40.773Z [32minfo[39m [c-api:./lib/annotations/info.js]                   @Info args: "Info -> [object Object],","Target ->","LandChainContract" 
+
+
+  Phase 22 Logic: Timers & Admin Validation
+    AdminValidator
+      ✔ should block Tribal Land transfer without DC Approval
+      ✔ should block transfer if category is TRIBAL_SCHEDULED even if flag is false
+      ✔ should allow Tribal Land transfer with DC Approval Hash
+      ✔ should strictly block Wakf Land transfer
+    Mutation Timer (approveMutation)
+      ✔ should block early approval (< 30 days)
+      ✔ should approve after 30 days
+
+  Phase 34: Comprehensive Transaction Metadata
+    transferParcel with Metadata
+      1) should store Stamp Duty and Witness details in TitleRecord
+      ✔ should validate Stamp Duty Amount
+
+  Dynamic State Machine (Schema 2.0)
+    ✔ should execute SALE transaction correctly
+    ✔ should execute INHERITANCE transaction correctly
+    ✔ should execute PARTITION transaction correctly
+    ✔ should execute CONVERSION transaction correctly
+    ✔ should block transaction if asset is LOCKED
+    ✔ should block unknown transaction type
+
+  FormatValidator (Phase 29)
+    ULPIN
+      ✔ should validate 14 digit numeric string
+      ✔ should fail if length is not 14
+      ✔ should fail if contains letters
+    CNR
+      ✔ should validate 16 alphanumeric chars
+      ✔ should fail if length incorrect
+    RERA
+      ✔ should validate P + 10-12 chars
+      ✔ should fail if no P prefix
+    IPFS
+      ✔ should validate Qm hash
+      ✔ should fail if invalid start char
+    Unit Conversion
+      ✔ should convert Hectare to Guntha correctly
+      ✔ should convert Hectare to Cent correctly
+
+  Indian Lifecycle Workflows
+    ✔ should register Agreement to Sale (ATS) and lock state
+    ✔ should lock property for Succession upon Death Intimation
+    ✔ should retire Parent Asset after Partition
+    ✔ should process Gift as a Transfer triggering Mutation
+
+  Judicial & Financial Locks
+    ✔ should lock parcel upon Mortgage creation
+    ✔ should unlock parcel when Mortgage is released
+    ✔ should REMAIN locked if another Lock exists (e.g. Litigation)
+
+  LandChainContract
+    createParcel
+      ✔ should create a parcel successfully
+      ✔ should throw error if parcel already exists
+    recordIntimation
+      ✔ should record a MORTGAGE charge and lock the parcel
+      ✔ should record a DISPUTE and set status to LITIGATION
+    transferParcel
+      ✔ should transfer parcel if no bad records exist
+      ✔ should fail transfer if active Mortgage exists
+    finalizeTitle
+      ✔ should finalize title if no disputes
+      ✔ should fail to finalize if disputes exist
+
+  Real World Nuances (Multi-Sig Explicit)
+    ✔ should block 100% sale if multiple owners exist (true Multi-Sig constraint)
+
+  Real World Nuances (Partial Transfers & Disputes)
+    Partial Transfers & Multi-Sig
+      ✔ should allow partial transfer of 50% share
+      ✔ should block 100% sale if multiple owners exist (Multi-Sig constraint)
+      ✔ should allow A to sell their own 50% share
+    Dispute Resolution
+      ✔ should resolve a dispute and UNLOCK the parcel
+      ✔ should resolve dispute but keep LOCKED if Mortgage exists
+
+  Real World Scenarios (RERA, Forest, Strata)
+    RERA Compliance (Strata Units)
+      ✔ should Block Sale of Strata Unit without Occupancy Certificate (OC)
+      ✔ should Allow Sale of Strata Unit WITH Occupancy Certificate
+    Forest & Tribal Protection (Conversion)
+      ✔ should Block Conversion of Forest Land
+    Strata vs Parent Land Disputes
+      ✔ should Block Strata Sale if Parent Land is under Litigation
+
+  Phase 33: NITI Aayog Refinements
+    Inheritance Share Validation
+      ✔ should FAIL if heirs shares do not sum to 100%
+      ✔ should PASS if heirs shares sum to 100%
+    Public Title Search
+      ✔ should return REDACTED view
+
+  Strata Extensions (Checklist)
+    ✔ should BLOCK sale of Unit if Parent Land is LOCKED (Mortgage)
+    ✔ should BLOCK sale of Unit if Parent Land is RETIRED
+    ✔ should ALLOW sale if Parent is FREE
+
+  LandChainContract: Strata Titling
+    createStrataUnit
+      ✔ should create a Strata Unit if parent is FREE
+      ✔ should fail if parent is LOCKED
+    executeTransaction on StrataUnit
+      ✔ should execute SALE on a StrataUnit
+      ✔ should block SALE if StrataUnit is LOCKED
+
+  Urban & Commercial Workflows (Amalgamation)
+    ✔ should successfully amalgamate two parcels
+    ✔ should fail amalgamation if owners mismatch
+    ✔ should fail if a constituent parcel is LOCKED
+    ✔ should rectify boundary (Akarband correction)
+
+
+  63 passing (97ms)
+  1 failing
+
+  1) Phase 34: Comprehensive Transaction Metadata
+       transferParcel with Metadata
+         should store Stamp Duty and Witness details in TitleRecord:
+     TypeError: Cannot read properties of undefined (reading 'lastTransaction')
+      at Context.<anonymous> (tests/ComprehensiveMetadata.test.ts:56:40)
+
+
+
+npm error Lifecycle script `test` failed with error:
+npm error code 1
+npm error path /Users/chirag.thakur/Code/LandChain/LandChain/packages/blockchain
+npm error workspace landchain-chaincode@0.0.1
+npm error location /Users/chirag.thakur/Code/LandChain/LandChain/packages/blockchain
+npm error command failed
+npm error command sh -c ts-mocha tests/**/*.test.ts tests/ComprehensiveMetadata.test.ts

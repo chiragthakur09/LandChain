@@ -20,13 +20,27 @@ Aligned with **NITI Aayog's Model Conclusive Land Titling Act**, LandChain separ
 
 ## 2. Smart Contract Architecture
 
-### The Composite Asset: `LandParcel`
-The `LandParcel` acts as the root aggregator for the three registers.
+### The Composite Asset: `LandParcel` (Schema 2.0)
+The `LandParcel` acts as the root aggregator for the three registers, now with dynamic state tracking.
+
+```mermaid
+erDiagram
+    LandParcel ||--|| TitleRecord : "has (RoT)"
+    LandParcel ||--o{ DisputeRecord : "has (RoD)"
+    LandParcel ||--o{ ChargeRecord : "has (RoCC)"
+    LandParcel ||--o{ StrataUnit : "parent of"
+    StrataUnit ||--|| TitleRecord : "has (RoT)"
+    StrataUnit ||--o{ DisputeRecord : "has (RoD)"
+    StrataUnit ||--o{ ChargeRecord : "has (RoCC)"
+```
+
 ```typescript
 LandParcel {
-  parcelId: string;
+  ulpin: string;
   surveyNo: string;
-  status: 'FREE' | 'LOCKED';
+  subDivision: string; // e.g., "/1/A"
+  landUse: 'AGRI' | 'NA' | 'IND' | 'FOREST';
+  status: 'FREE' | 'LOCKED' | 'LITIGATION' | 'RETIRED'; // Dynamic Status
   title: TitleRecord;     // The RoT
   disputes: DisputeRecord[]; // The RoD
   charges: ChargeRecord[];   // The RoCC
@@ -35,11 +49,60 @@ LandParcel {
 
 ### Strata Titling (Vertical Property)
 For apartments and commercial units, we use `StrataUnit`.
-- **Linked**: Contains `parentParcelId` linking to the Land.
+- **Linked**: Contains `parentUlpin` linking to the Land.
 - **Independent**: Has its own independent `RoT`, `RoD`, and `RoCC`.
-- **UDS**: Tracks Undivided Share of Land.
+- **UDS/Carpet Area**: Tracks Undivided Share of Land and verified area.
 
-## 3. Workflows
+## 3. Pluggable Transaction Architecture (Phase 16)
+To support infinite transaction types (Gift, Partition, Inheritance) without changing the core contract structure, we use a generic execution model.
+
+### The `executeTransaction` Function
+- **Input**: `TransactionType` (SALE/PARTITION/INHERITANCE), `DataPayload`, `EvidenceHash` (IPFS).
+- **Core Logic**:
+    1.  **State Check**: Is the asset `FREE`? (Global Lock Check).
+    2.  **Logic Delegate**: Verification runs based on Type (e.g., Inheritance checks Heirship).
+    3.  **State Transition**: Updates `RoT` (Title) or splits asset (Partition).
+    4.  **Audit**: Emits `TransactionExecuted` event with evidence.
+
+#### Transaction Flow
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as LandController
+    participant Chaincode as LandChainContract
+    participant State as WorldState
+
+    Client->>API: POST /land/transaction (Type=SALE, Data)
+    API->>Chaincode: executeTransaction(SALE, Data)
+    Chaincode->>State: convert(ulpin) -> LandParcel
+    State-->>Chaincode: Parcel Object
+    
+    Chaincode->>Chaincode: Check Status (Is FREE?)
+    alt Status != FREE
+        Chaincode-->>API: Error: Asset Locked
+    end
+
+    Chaincode->>Chaincode: Delegate to processSale(Data)
+    Chaincode->>State: putState(UpdatedParcel)
+    Chaincode-->>API: Success (TxHash)
+    API-->>Client: 200 OK
+```
+
+#### Lifecycle State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> FREE
+    FREE --> LOCKED : Mortgage/Intimation
+    FREE --> LITIGATION : Dispute Filed
+    LOCKED --> FREE : Charge Cleared
+    LITIGATION --> FREE : Dispute Resolved
+    FREE --> RETIRED : Partition/Subdivision
+    RETIRED --> [*]
+```
+
+## 4. Workflows
 
 ### A. Compulsory Intimation (The "Push" Model)
 External entities (Courts, Banks) push data to the blockchain.
@@ -53,5 +116,15 @@ External entities (Courts, Banks) push data to the blockchain.
 4.  **Checks**: Contract ensures `RoD` is empty.
 5.  **Result**: Title becomes `Conclusive`. Government issues Indemnity.
 
-## 4. Technology Stack
-(Unchanged: Hyperledger Fabric v2.5, NestJS, Next.js)
+## 5. Error Handling Strategy (Standardized)
+To ensure consistent communication between the Blockchain and Client, the Server Layer implements a **Global Exception Filter**.
+
+- **Fabric Errors** (e.g., "Asset not found", "Transfer Denied") are caught by the NestJS Filter.
+- **Mapping Logic**:
+    - `Asset not found` -> **404 Not Found**
+    - `Asset is LOCKED` -> **403 Forbidden**
+    - `Asset already exists` -> **409 Conflict**
+- **Client Benefit**: The UI receives standard HTTP status codes instead of raw Chaincode error strings.
+
+## 6. Technology Stack
+(Hyperledger Fabric v2.5, NestJS, Next.js)
