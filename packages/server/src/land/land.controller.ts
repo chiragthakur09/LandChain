@@ -1,11 +1,13 @@
-import { Controller, Get, Post, Body, Param, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, BadRequestException, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { FabricService } from '../fabric/fabric.service';
 import { IdentityService } from '../identity/identity.service';
+import { LandService } from './land.service';
+import { Response } from 'express';
 import {
-    CreateParcelDto, TransferParcelDto, ExecuteTransactionDto,
+    CreateParcelDto, InitiateTransferDto, ExecuteTransactionDto,
     SubdivideParcelDto, ConvertLandUseDto, RecordIntimationDto,
-    ResolveDisputeDto, CreateStrataUnitDto, FinalizeTitleDto
+    ResolveDisputeDto, CreateStrataUnitDto, FinalizeTitleDto, ApproveMutationDto
 } from './land.dto';
 
 @ApiTags('Land Management')
@@ -13,16 +15,11 @@ import {
 export class LandController {
     constructor(
         private readonly fabricService: FabricService,
-        private readonly identityService: IdentityService
+        private readonly identityService: IdentityService,
+        private readonly landService: LandService
     ) { }
 
-    @ApiOperation({ summary: 'Get Land Parcel Details' })
-    @ApiResponse({ status: 200, description: 'Returns the composite Land Parcel asset (RoT + RoD + RoCC)' })
-    @ApiResponse({ status: 404, description: 'Asset not found' })
-    @Get(':id')
-    async getParcel(@Param('id') id: string) {
-        return this.fabricService.query('getParcel', id);
-    }
+
 
     @ApiOperation({ summary: 'Public Title Search (Sanitized)' })
     @ApiResponse({ status: 200, description: 'Returns redacted parcel details for public verification' })
@@ -35,14 +32,17 @@ export class LandController {
     @ApiResponse({ status: 201, description: 'Parcel Created successfully' })
     @Post()
     async createParcel(@Body() dto: CreateParcelDto) {
-        return this.fabricService.submit('createParcel', dto.ulpin, dto.ownerId, dto.geoJson, dto.docHash);
+        const legacyJson = JSON.stringify(dto.legacyIdentifiers || {});
+        const ownersJson = JSON.stringify(dto.owners);
+        const spatialDataJson = JSON.stringify(dto.spatialData || {});
+        return this.fabricService.submit('createParcel', dto.ulpin, ownersJson, dto.geoJson, dto.docHash, legacyJson, spatialDataJson);
     }
 
-    @ApiOperation({ summary: 'Transfer Ownership (Sale Deed)' })
-    @ApiResponse({ status: 201, description: 'Transfer successful' })
+    @ApiOperation({ summary: 'Initiate Ownership Transfer (Step 1)' })
+    @ApiResponse({ status: 201, description: 'Transfer Initiated. Status: PENDING_MUTATION' })
     @ApiResponse({ status: 403, description: 'Transfer blocked (LOCKED/DISPUTE)' })
     @Post('transfer')
-    async transferParcel(@Body() dto: TransferParcelDto) {
+    async initiateTransfer(@Body() dto: InitiateTransferDto) {
         // 1. Verify Auth Token (Mock Identity Check)
         if (!dto.authToken || !dto.authToken.startsWith('MOCK_AADHAAR_TOKEN_')) {
             throw new BadRequestException('Invalid or Missing Auth Token. Please Verify Identity first.');
@@ -54,7 +54,15 @@ export class LandController {
         };
         const metadataJson = JSON.stringify(metadata);
 
-        return this.fabricService.submit('transferParcel', dto.ulpin, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString(), dto.paymentUtr, metadataJson);
+        // Call 'initiateTransfer' chaincode function
+        return this.fabricService.submit('initiateTransfer', dto.ulpin, dto.sellerId, dto.buyerId, dto.sharePercentage.toString(), dto.salePrice.toString(), dto.paymentUtr, metadataJson);
+    }
+
+    @ApiOperation({ summary: 'Approve Mutation (Step 2 - Registrar)' })
+    @ApiResponse({ status: 201, description: 'Mutation Approved. Title Finalized.' })
+    @Post('mutation/approve')
+    async approveMutation(@Body() dto: ApproveMutationDto) {
+        return this.fabricService.submit('approveMutation', dto.ulpin);
     }
 
     @ApiOperation({ summary: 'Get Payment Details (UTR)' })
@@ -120,5 +128,20 @@ export class LandController {
     @Get('pending')
     async getPendingMutations() {
         return this.fabricService.query('queryPendingMutations');
+    }
+
+    @ApiOperation({ summary: 'Download Property Passbook PDF' })
+    @ApiResponse({ status: 200, description: 'Returns PDF Stream' })
+    @Get(':id/passbook')
+    async downloadPassbook(@Param('id') id: string, @Res() res: Response) {
+        return this.landService.generatePassbookPDF(id, res);
+    }
+
+    @ApiOperation({ summary: 'Get Land Parcel Details' })
+    @ApiResponse({ status: 200, description: 'Returns the composite Land Parcel asset (RoT + RoD + RoCC)' })
+    @ApiResponse({ status: 404, description: 'Asset not found' })
+    @Get(':id')
+    async getParcel(@Param('id') id: string) {
+        return this.fabricService.query('getParcel', id);
     }
 }

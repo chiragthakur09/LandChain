@@ -29,14 +29,18 @@ export function TransferParcelForm() {
         setIsLoading(true);
 
         try {
-            await LandAPI.transferParcel({
-                ...formData,
-                share: Number(formData.share),
-                price: Number(formData.price)
+            await LandAPI.initiateTransfer({
+                ulpin: formData.ulpin,
+                sellerId: formData.fromOwner,
+                buyerId: formData.toOwner,
+                sharePercentage: Number(formData.share),
+                salePrice: Number(formData.price),
+                paymentUtr: formData.paymentId,
+                authToken: 'MOCK_AADHAAR_TOKEN_CLIENT' // Mock token
             });
             toast({
                 title: "Transfer Initiated",
-                description: `Ownership transfer for ${formData.ulpin} submitted.`,
+                description: `Request for ${formData.ulpin} submitted. Awaiting Registrar Approval.`,
             });
         } catch (error: any) {
             console.error(error);

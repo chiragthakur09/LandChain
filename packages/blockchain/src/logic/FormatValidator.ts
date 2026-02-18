@@ -12,6 +12,16 @@ export class FormatValidator {
         return true;
     }
 
+    // Parse ULPIN Components (2-8-4 Standard)
+    static extractULPINComponents(ulpin: string) {
+        this.validateULPIN(ulpin);
+        return {
+            stateCode: ulpin.substring(0, 2),
+            parcelIdentifier: ulpin.substring(2, 10),
+            plotDetails: ulpin.substring(10, 14)
+        };
+    }
+
     // CNR: 16 Alphanumeric
     // Standard: e-Courts Case Number Record
     static validateCNR(cnr: string): boolean {

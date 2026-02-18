@@ -21,7 +21,7 @@ export class PaymentRecord {
     public timestamp!: number;
 
     @Property()
-    public status!: 'CONFIRMED' | 'FAILED';
+    public status!: 'CONFIRMED' | 'FAILED' | 'ESCROW_LOCKED';
 
     @Property()
     public type!: 'SALE_PRICE' | 'STAMP_DUTY';

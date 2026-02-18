@@ -64,7 +64,7 @@ To support infinite transaction types (Gift, Partition, Inheritance) without cha
     3.  **State Transition**: Updates `RoT` (Title) or splits asset (Partition).
     4.  **Audit**: Emits `TransactionExecuted` event with evidence.
 
-#### Transaction Flow
+#### Transaction Flow (Decoupled)
 
 ```mermaid
 sequenceDiagram
@@ -73,29 +73,32 @@ sequenceDiagram
     participant Chaincode as LandChainContract
     participant State as WorldState
 
-    Client->>API: POST /land/transaction (Type=SALE, Data)
-    API->>Chaincode: executeTransaction(SALE, Data)
-    Chaincode->>State: convert(ulpin) -> LandParcel
-    State-->>Chaincode: Parcel Object
-    
-    Chaincode->>Chaincode: Check Status (Is FREE?)
-    alt Status != FREE
-        Chaincode-->>API: Error: Asset Locked
-    end
+    Note over Client, State: Phase 1: Initiation
+    Client->>API: POST /land/transfer (Initiate)
+    API->>Chaincode: initiateTransfer(Data)
+    Chaincode->>State: Checked Status (Is FREE?)
+    Chaincode->>State: putState(Status=PENDING_MUTATION)
+    Chaincode-->>API: Success (Request Logged)
 
-    Chaincode->>Chaincode: Delegate to processSale(Data)
-    Chaincode->>State: putState(UpdatedParcel)
-    Chaincode-->>API: Success (TxHash)
-    API-->>Client: 200 OK
+    Note over Client, State: Phase 2: Scrutiny (30 Days)
+    
+    Note over Client, State: Phase 3: Finalization
+    Client->>API: POST /land/mutation/approve (Admin)
+    API->>Chaincode: approveMutation(ulpin)
+    Chaincode->>Chaincode: Check Timer & RBAC
+    Chaincode->>State: putState(Owners=New, Status=FREE)
+    Chaincode-->>API: Success (Title Transferred)
 ```
 
-#### Lifecycle State Machine
+#### Lifecycle State Machine (Updated)
 
 ```mermaid
 stateDiagram-v2
     [*] --> FREE
     FREE --> LOCKED : Mortgage/Intimation
     FREE --> LITIGATION : Dispute Filed
+    FREE --> PENDING_MUTATION : Transfer Initiated
+    PENDING_MUTATION --> FREE : Mutation Approved
     LOCKED --> FREE : Charge Cleared
     LITIGATION --> FREE : Dispute Resolved
     FREE --> RETIRED : Partition/Subdivision

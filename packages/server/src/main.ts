@@ -14,8 +14,9 @@ async function bootstrap() {
         .setTitle('LandChain API')
         .setDescription('Government-Grade Land Registry API')
         .setVersion('1.0')
-        .addTag('Land', 'Land Parcel Management')
-        .addTag('Fabric', 'Hyperledger Fabric Operations')
+        .addTag('Land Management', 'Land Parcel & Registry Operations')
+        .addTag('Identity', 'Authentication & Aadhaar Services')
+        .addTag('IPFS / File Storage', 'Decentralized File Uploads')
         .build();
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api', app, document);

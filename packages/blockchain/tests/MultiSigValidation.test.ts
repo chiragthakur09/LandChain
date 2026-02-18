@@ -65,7 +65,7 @@ describe('Real World Nuances (Multi-Sig Explicit)', () => {
         });
 
         try {
-            await contract.transferParcel(ctx, 'P1', 'A', 'BUYER', 100, 1000000, 'UTR_MS_FAIL');
+            await contract.initiateTransfer(ctx, 'P1', 'A', 'BUYER', 100, 1000000, 'UTR_MS_FAIL');
             expect.fail('Should have blocked 100% sale');
         } catch (err: any) {
             expect(err.message).to.include('Seller only owns 50%');

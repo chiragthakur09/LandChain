@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/components/ui/use-toast"
 import { RotateCcw, CheckCircle, Clock } from "lucide-react"
+import { LandAPI } from '@/lib/api';
 
 interface PendingMutation {
     ulpin: string;
@@ -29,9 +30,10 @@ export function RegistrarDashboard() {
     const fetchMutations = async () => {
         setLoading(true);
         try {
-            const res = await fetch('http://localhost:3001/land/pending');
-            const data = await res.json();
-            setMutations(data);
+            const data = await LandAPI.getPendingMutations();
+            // Ensure data is array (handling JSON parsing quirks from Fabric)
+            const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
+            setMutations(Array.isArray(parsedData) ? parsedData : []);
         } catch (err) {
             console.error(err);
             toast({
@@ -50,21 +52,12 @@ export function RegistrarDashboard() {
 
     const handleApprove = async (ulpin: string) => {
         try {
-            const res = await fetch('http://localhost:3001/land/finalize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ulpin })
+            await LandAPI.approveMutation(ulpin);
+            toast({
+                title: "Success",
+                description: `Mutation approved for ${ulpin}`,
             });
-
-            if (res.ok) {
-                toast({
-                    title: "Success",
-                    description: `Mutation approved for ${ulpin}`,
-                });
-                fetchMutations(); // Refresh
-            } else {
-                throw new Error('Failed to approve');
-            }
+            fetchMutations(); // Refresh
         } catch (err) {
             toast({
                 title: "Error",

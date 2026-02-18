@@ -1,88 +1,23 @@
-import { HeroSearch } from "@/components/hero-search";
-import dynamic from 'next/dynamic';
-
-const LandMap = dynamic(() => import('@/components/LandMap'), {
-    ssr: false,
-    loading: () => <div className="h-96 w-full bg-slate-100 rounded-lg animate-pulse flex items-center justify-center text-slate-400">Loading GIS Data...</div>
-});
-
-const PublicPayment = dynamic(() => import('@/components/PublicPayment'), { ssr: false });
+import { SwitchboardHub } from "@/components/SwitchboardHub";
+import Image from "next/image";
 
 export default function Home() {
     return (
-        <main className="min-h-screen bg-slate-50">
-            {/* Header */}
-            <header className="fixed top-0 w-full bg-white/80 backdrop-blur-md border-b border-gray-100 z-50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">L</div>
-                        <span className="font-bold text-xl text-gray-900">LandChain</span>
-                    </div>
-                    <nav className="flex gap-6 text-sm font-medium text-gray-600">
-                        <a href="#" className="hover:text-indigo-600">Registry</a>
-                        <a href="#" className="hover:text-indigo-600">Validator Nodes</a>
-                        <a href="#" className="hover:text-indigo-600">Docs</a>
-                        <a href="#" className="text-indigo-600">Login (Aadhaar)</a>
-                    </nav>
-                </div>
-            </header>
-
-            {/* Hero Section */}
-            <div className="pt-32 pb-20 px-4">
-                <div className="max-w-4xl mx-auto text-center space-y-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 border border-indigo-100 rounded-full text-indigo-700 text-sm font-medium animate-in fade-in zoom-in duration-500">
-                        <span className="w-2 h-2 bg-indigo-600 rounded-full animate-pulse"></span>
-                        Gov-Tech 3.0 Live on Hyperledger
-                    </div>
-
-                    <h1 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight">
-                        Conclusive Titling.<br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-                            Code is Law.
-                        </span>
-                    </h1>
-
-                    <p className="text-xl text-slate-600 max-w-2xl mx-auto">
-                        The national standard for immutable land records. Instant mutation,
-                        fraud-proof ownership, and atomic settlements via Smart Contracts.
-                    </p>
-
-                    <div className="pt-8">
-                        <HeroSearch />
-                    </div>
-                </div>
-
-                {/* GIS Map Section */}
-                <div className="max-w-7xl mx-auto mt-12 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-200">
-                    <div className="bg-white p-2 rounded-xl shadow-2xl border border-gray-200">
-                        <LandMap />
-                    </div>
-                    <p className="text-center text-sm text-gray-500 mt-2">
-                        Live GIS Data: Green = Conclusive Title, Red = Litigation/Locked
-                    </p>
-                </div>
-
-                <div className="mt-16">
-                    <PublicPayment />
-                </div>
+        <main className="flex min-h-screen flex-col items-center justify-between p-24">
+            <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
+                <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
+                    LandChain &nbsp;
+                    <code className="font-mono font-bold">Government of India</code>
+                </p>
             </div>
 
-            {/* Stats / Footer Mock */}
-            <div className="border-t border-gray-200 bg-white py-12">
-                <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-                    <div>
-                        <div className="text-3xl font-bold text-gray-900">100%</div>
-                        <div className="text-sm text-gray-500 mt-1">Tamper Proof Records</div>
-                    </div>
-                    <div>
-                        <div className="text-3xl font-bold text-gray-900">&lt; 2s</div>
-                        <div className="text-sm text-gray-500 mt-1">Mutation & Settlement</div>
-                    </div>
-                    <div>
-                        <div className="text-3xl font-bold text-gray-900">Zero</div>
-                        <div className="text-sm text-gray-500 mt-1">Litigation on New Titles</div>
-                    </div>
-                </div>
+            <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-to-br before:from-transparent before:to-blue-700 before:opacity-10 before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-to-t after:from-sky-900 after:via-[#0141ff] after:opacity-40 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
+                <h1 className="text-4xl font-bold text-center">National Land Registry</h1>
+            </div>
+
+            <SwitchboardHub />
+
+            <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
             </div>
         </main>
     );

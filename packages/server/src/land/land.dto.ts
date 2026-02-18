@@ -1,20 +1,80 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class LandOwner {
+    @ApiProperty({ example: 'IND_CITIZEN_123' })
+    ownerId: string;
+
+    @ApiProperty({ example: 100 })
+    sharePercentage: number;
+
+    @ApiProperty({ example: 'INDIVIDUAL', enum: ['INDIVIDUAL', 'CORPORATE', 'GOVERNMENT'] })
+    type: 'INDIVIDUAL' | 'CORPORATE' | 'GOVERNMENT';
+}
+
+export class GeometryDto {
+    @ApiProperty({ example: 'Polygon' })
+    type: 'Polygon';
+    @ApiProperty({ example: [[[0, 0], [0, 10], [10, 10], [10, 0], [0, 0]]] })
+    coordinates: number[][][];
+}
+
+export class SpatialPropertiesDto {
+    @ApiProperty({ example: 10000 })
+    calculatedAreaSqM: number;
+
+    @ApiProperty({ example: [73.85, 18.52] })
+    centroid: number[];
+
+    @ApiProperty({ example: 1.0 })
+    localAreaValue: number;
+
+    @ApiProperty({ example: 'HECTARE', enum: ['HECTARE', 'ACRE', 'GUNTHA', 'BIGHA'] })
+    localAreaUnit: 'HECTARE' | 'ACRE' | 'GUNTHA' | 'BIGHA';
+
+    @ApiProperty({ example: 'GPS', enum: ['ETS', 'GPS', 'DRONE', 'LEGACY_DIGITIZED'] })
+    surveyMethod: 'ETS' | 'GPS' | 'DRONE' | 'LEGACY_DIGITIZED';
+
+    @ApiProperty({ example: 0.5 })
+    accuracyMarginM: number;
+}
+
+export class SpatialDataDto {
+    @ApiProperty({ example: 'Feature' })
+    type: 'Feature';
+
+    @ApiProperty({ type: GeometryDto })
+    geometry: GeometryDto;
+
+    @ApiProperty({ type: SpatialPropertiesDto })
+    properties: SpatialPropertiesDto;
+}
+
 export class CreateParcelDto {
     @ApiProperty({ example: 'PARCEL_001', description: 'Unique ID of the Land Parcel (ULPIN)' })
     ulpin: string;
 
-    @ApiProperty({ example: 'IND_CITIZEN_123', description: 'Owner ID' })
-    ownerId: string;
+    @ApiProperty({ type: [LandOwner], description: 'List of Owners' })
+    owners: LandOwner[];
 
     @ApiProperty({ example: '[[0,0],[0,10],[10,10],[10,0]]', description: 'GeoJSON coordinates' })
     geoJson: string;
 
     @ApiProperty({ example: 'QmHash...', description: 'IPFS Hash of Title Deed' })
     docHash: string;
+
+    @ApiProperty({ required: false, example: { ctsNumber: '450/A' }, description: 'Legacy Identifiers (Optional)' })
+    legacyIdentifiers?: {
+        ctsNumber?: string;
+        surveyNumber?: string;
+        plotNumber?: string;
+        propertyCardId?: string;
+    };
+
+    @ApiProperty({ required: false, type: SpatialDataDto, description: 'Bhu-Naksha Spatial Data' })
+    spatialData?: SpatialDataDto;
 }
 
-export class TransferParcelDto {
+export class InitiateTransferDto {
     @ApiProperty({ example: 'PARCEL_001' })
     ulpin: string;
 
@@ -46,6 +106,11 @@ export class TransferParcelDto {
 
     @ApiProperty({ required: false, description: 'Witness IDs/Hashes (Min 2)' })
     witnesses?: string[];
+}
+
+export class ApproveMutationDto {
+    @ApiProperty({ example: 'PARCEL_001' })
+    ulpin: string;
 }
 
 export class ExecuteTransactionDto {

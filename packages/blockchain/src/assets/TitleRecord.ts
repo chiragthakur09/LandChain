@@ -6,6 +6,9 @@ export class OwnerShare {
     public ownerId: string = '';
     @Property()
     public sharePercentage: number = 0;
+
+    @Property()
+    public type: 'INDIVIDUAL' | 'CORPORATE' | 'GOVERNMENT' = 'INDIVIDUAL';
 }
 
 @Object()

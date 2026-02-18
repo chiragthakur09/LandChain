@@ -60,8 +60,19 @@ cd packages/client && npm run dev
 - `packages/blockchain`: The Smart Contracts (`LandChainContract`, `AssetRegistry`).
 - `packages/server`: The Bridge API (`LandController`).
 - `packages/client`: The Next.js "Hero" UI.
+- `packages/blockchain`: The Smart Contracts (`LandChainContract`, `AssetRegistry`).
+- `packages/server`: The Bridge API (`LandController`).
+- `packages/client`: The Next.js "Hero" UI.
 - `docs/`: Architecture and Vision documentation.
     - [**Developer Guide**](docs/developer_guide.md): Detailed Codebase Walkthrough.
+    - [**Administrative Engine**](docs/architecture.md): Transaction Decoupling & RBAC.
+    - [**Manual Test Guide**](manual_test_guide.md): How to test the 2-Step Transfer.
+
+## 🏛️ Administrative Engine (New)
+We have implemented a **Transaction Decoupling** model:
+1.  **Initiate Transfer**: Sellers/Buyers sign the deed. Asset Status -> `PENDING_MUTATION`.
+2.  **Scrutiny Period**: 30-Day public notice window (simulated).
+3.  **Approve Mutation**: Registrar Finalizes the transfer -> Conclusive Title.
 
 ---
 *Built with ❤️ for Digital India*

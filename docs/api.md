@@ -21,15 +21,32 @@ Returns the merged view of RoT, RoD, and RoCC.
 }
 ```
 
-### 2. Transfer Ownership (Sale Deed)
+### 2. Initiate Ownership Transfer (Step 1)
 **POST** `/land/transfer`
+
+Initiates the transfer. Locks the asset (`PENDING_MUTATION`) and starts the 30-day notice period.
 
 **Body:**
 ```json
 {
   "ulpin": "MH12PUNE010001",
-  "newOwnerId": "IND_CITIZEN_789",
-  "salePrice": 5000000
+  "sellerId": "IND_CITIZEN_123",
+  "buyerId": "IND_CITIZEN_789",
+  "sharePercentage": 100,
+  "salePrice": 5000000,
+  "paymentUtr": "UTR_BANK_12345"
+}
+```
+
+### 3. Approve Mutation (Step 2 - Admin)
+**POST** `/land/mutation/approve`
+
+Finalizes the transfer after the scrutiny period. Updates the Title.
+
+**Body:**
+```json
+{
+  "ulpin": "MH12PUNE010001"
 }
 ```
 

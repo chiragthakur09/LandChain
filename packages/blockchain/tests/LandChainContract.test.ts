@@ -92,7 +92,7 @@ describe('LandChainContract', () => {
     });
 
     describe('transferParcel', () => {
-        it('should transfer parcel if no bad records exist', async () => {
+        it('should initiate and finalize transfer (Two-Step Flow)', async () => {
             const existingParcel = new LandParcel();
             existingParcel.ulpin = 'PARCEL_TEST_001';
             existingParcel.status = 'FREE';
@@ -100,19 +100,34 @@ describe('LandChainContract', () => {
             existingParcel.charges = [];
             existingParcel.disputes = [];
 
+            // Mock State
+            const state: any = { 'PARCEL_TEST_001': Buffer.from(JSON.stringify(existingParcel)) };
+
             mockStub.getState.callsFake(async (key: string) => {
-                if (key === 'PARCEL_TEST_001') return Buffer.from(JSON.stringify(existingParcel));
-                if (key.startsWith('PAY_')) return Buffer.alloc(0);
-                return Buffer.alloc(0);
+                return state[key] || Buffer.alloc(0);
             });
 
-            await contract.transferParcel(ctx, 'PARCEL_TEST_001', 'OLD_OWNER', 'NEW_OWNER', 100, 1000, 'UTR_LEGACY_1');
+            mockStub.putState.callsFake(async (key: string, value: Buffer) => {
+                state[key] = value;
+            });
 
-            const putStateCalls = mockStub.putState.getCalls();
-            const parcelCall = putStateCalls.find(call => call.args[0] === 'PARCEL_TEST_001');
-            const updatedParcel = JSON.parse(parcelCall!.args[1].toString());
+            // Step 1: Initiate
+            await contract.initiateTransfer(ctx, 'PARCEL_TEST_001', 'OLD_OWNER', 'NEW_OWNER', 100, 1000, 'UTR_LEGACY_1');
 
-            expect(updatedParcel.title.owners[0].ownerId).to.equal('NEW_OWNER');
+            // Verify Intermediate State
+            const intermediateParcel = JSON.parse(state['PARCEL_TEST_001'].toString());
+            expect(intermediateParcel.status).to.equal('PENDING_MUTATION');
+            expect(intermediateParcel.pendingTransfer.buyerId).to.equal('NEW_OWNER');
+            expect(intermediateParcel.title.owners[0].ownerId).to.equal('OLD_OWNER'); // Title NOT changed yet
+
+            // Step 2: Approve (Finalize)
+            await contract.approveMutation(ctx, 'PARCEL_TEST_001');
+
+            // Verify Final State
+            const finalParcel = JSON.parse(state['PARCEL_TEST_001'].toString());
+            expect(finalParcel.status).to.equal('FREE');
+            expect(finalParcel.title.owners[0].ownerId).to.equal('NEW_OWNER'); // Title Changed
+            expect(finalParcel.pendingTransfer).to.be.undefined;
         });
 
         it('should fail transfer if active Mortgage exists', async () => {
@@ -129,10 +144,10 @@ describe('LandChainContract', () => {
             });
 
             try {
-                await contract.transferParcel(ctx, 'PARCEL_TEST_001', 'OLD_OWNER', 'NEW_OWNER', 100, 1000, 'UTR_LEGACY_FAIL');
+                await contract.initiateTransfer(ctx, 'PARCEL_TEST_001', 'OLD_OWNER', 'NEW_OWNER', 100, 1000, 'UTR_LEGACY_FAIL');
                 expect.fail('Should have failed due to Mortgage');
             } catch (err: any) {
-                expect(err.message).to.include('Transfer Denied');
+                expect(err.message).to.include('not FREE');
             }
         });
     });
